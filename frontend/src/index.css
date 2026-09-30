@@ -1,0 +1,445 @@
+@import 'tailwindcss';
+
+/* =============================================================================
+   Tokens de diseño PaqRap — Centro de Operaciones
+   Los colores se definen como variables CSS (claro y oscuro) y Tailwind los expone
+   como utilidades (bg-surface, text-ink-2, border-line…). El canvas del mapa y los
+   gráficos leen las mismas variables, así todo cambia junto con el tema.
+   ============================================================================= */
+:root {
+  color-scheme: light;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --surface-3: #eef0f4;
+  --line: #e4e7ec;
+  --line-strong: #d0d5dd;
+  --ink: #101828;
+  --ink-2: #475467;
+  --ink-3: #667085;
+  --accent: #2f5bd3;
+  --accent-hover: #2549b3;
+  --accent-ink: #2446a8;
+  --accent-soft: #2f5bd314;
+  --on-accent: #ffffff;
+  --focus: #2f5bd366;
+
+  /* navegación lateral: siempre oscura, como en los ERP */
+  --nav-bg: #0f1628;
+  --nav-bg-2: #172036;
+  --nav-ink: #c3cad9;
+  --nav-ink-2: #7d879c;
+  --nav-active: #ffffff14;
+  --nav-line: #ffffff12;
+
+  /* estado (semáforo). *-ink para texto sobre superficie; el resto para marcas y rellenos */
+  --good: #16a34a;
+  --good-ink: #15803d;
+  --good-soft: #16a34a17;
+  --warning: #f59e0b;
+  --warning-ink: #b45309;
+  --warning-soft: #f59e0b1f;
+  --serious: #ea6a2f;
+  --serious-ink: #c2410c;
+  --serious-soft: #ea6a2f1a;
+  --critical: #dc2626;
+  --critical-ink: #b91c1c;
+  --critical-soft: #dc262614;
+
+  /* identidad de tipo de vehículo (paleta categórica validada: slots 1-3) */
+  --veh-auto: #2a78d6;
+  --veh-moto: #eb6834;
+  --veh-bici: #1baf7a;
+
+  /* mapa */
+  --land: #f6f6f3;
+  --road-local: #e6e5df;
+  --road-arterial: #d4cdbd;
+  --map-label: #8a8f99;
+
+  /* gráficos */
+  --chart-grid: #eaecf0;
+  --chart-axis: #c3c7cf;
+
+  --shadow-sm: 0 1px 2px #1018280d;
+  --shadow-md: 0 4px 12px -2px #10182814, 0 2px 4px -2px #1018280a;
+  --shadow-lg: 0 16px 40px -8px #10182829, 0 4px 8px -4px #10182814;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0a0e16;
+    --surface: #111722;
+    --surface-2: #151c29;
+    --surface-3: #1c2433;
+    --line: #232c3c;
+    --line-strong: #2f3a4e;
+    --ink: #e8ecf3;
+    --ink-2: #a6b0c3;
+    --ink-3: #8089a0;
+    --accent: #5b8def;
+    --accent-hover: #7aa3f3;
+    --accent-ink: #8fb2f6;
+    --accent-soft: #5b8def1f;
+    --on-accent: #0a0e16;
+    --focus: #5b8def66;
+    --nav-bg: #080b12;
+    --nav-bg-2: #0f1420;
+    --nav-ink: #c3cad9;
+    --nav-ink-2: #737d92;
+    --nav-active: #ffffff12;
+    --nav-line: #ffffff0f;
+    --good: #22c55e;
+    --good-ink: #4ade80;
+    --good-soft: #22c55e1f;
+    --warning: #fbbf24;
+    --warning-ink: #fcd34d;
+    --warning-soft: #fbbf241f;
+    --serious: #f0804f;
+    --serious-ink: #fb9d74;
+    --serious-soft: #f0804f1f;
+    --critical: #ef4444;
+    --critical-ink: #f87171;
+    --critical-soft: #ef44441f;
+    --veh-auto: #3987e5;
+    --veh-moto: #d95926;
+    --veh-bici: #199e70;
+    --land: #0e131c;
+    --road-local: #1a212d;
+    --road-arterial: #2c3544;
+    --map-label: #5e6778;
+    --chart-grid: #1f2735;
+    --chart-axis: #394356;
+    --shadow-sm: 0 1px 2px #0000004d;
+    --shadow-md: 0 4px 12px -2px #00000066, 0 2px 4px -2px #0000004d;
+    --shadow-lg: 0 16px 40px -8px #00000099, 0 4px 8px -4px #00000066;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0a0e16;
+  --surface: #111722;
+  --surface-2: #151c29;
+  --surface-3: #1c2433;
+  --line: #232c3c;
+  --line-strong: #2f3a4e;
+  --ink: #e8ecf3;
+  --ink-2: #a6b0c3;
+  --ink-3: #8089a0;
+  --accent: #5b8def;
+  --accent-hover: #7aa3f3;
+  --accent-ink: #8fb2f6;
+  --accent-soft: #5b8def1f;
+  --on-accent: #0a0e16;
+  --focus: #5b8def66;
+  --nav-bg: #080b12;
+  --nav-bg-2: #0f1420;
+  --nav-ink: #c3cad9;
+  --nav-ink-2: #737d92;
+  --nav-active: #ffffff12;
+  --nav-line: #ffffff0f;
+  --good: #22c55e;
+  --good-ink: #4ade80;
+  --good-soft: #22c55e1f;
+  --warning: #fbbf24;
+  --warning-ink: #fcd34d;
+  --warning-soft: #fbbf241f;
+  --serious: #f0804f;
+  --serious-ink: #fb9d74;
+  --serious-soft: #f0804f1f;
+  --critical: #ef4444;
+  --critical-ink: #f87171;
+  --critical-soft: #ef44441f;
+  --veh-auto: #3987e5;
+  --veh-moto: #d95926;
+  --veh-bici: #199e70;
+  --land: #0e131c;
+  --road-local: #1a212d;
+  --road-arterial: #2c3544;
+  --map-label: #5e6778;
+  --chart-grid: #1f2735;
+  --chart-axis: #394356;
+  --shadow-sm: 0 1px 2px #0000004d;
+  --shadow-md: 0 4px 12px -2px #00000066, 0 2px 4px -2px #0000004d;
+  --shadow-lg: 0 16px 40px -8px #00000099, 0 4px 8px -4px #00000066;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-nav: var(--nav-bg);
+  --color-nav-2: var(--nav-bg-2);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-2: var(--nav-ink-2);
+  --color-nav-active: var(--nav-active);
+  --color-nav-line: var(--nav-line);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-good-soft: var(--good-soft);
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-soft: var(--warning-soft);
+  --color-serious: var(--serious);
+  --color-serious-ink: var(--serious-ink);
+  --color-serious-soft: var(--serious-soft);
+  --color-critical: var(--critical);
+  --color-critical-ink: var(--critical-ink);
+  --color-critical-soft: var(--critical-soft);
+  --color-veh-auto: var(--veh-auto);
+  --color-veh-moto: var(--veh-moto);
+  --color-veh-bici: var(--veh-bici);
+
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+@layer components {
+  /* --- botones --- */
+  .btn {
+    @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium whitespace-nowrap transition-colors select-none disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply h-7 rounded-md px-2.5 text-xs;
+  }
+  .btn-lg {
+    @apply h-9 px-4 text-sm;
+  }
+  .btn-primary {
+    @apply border-accent bg-accent text-on-accent shadow-sm hover:border-accent-hover hover:bg-accent-hover;
+  }
+  .btn-secondary {
+    @apply border-line-strong bg-surface text-ink shadow-sm hover:bg-surface-3;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-ink-2 hover:bg-surface-3 hover:text-ink;
+  }
+  .btn-danger {
+    @apply border-critical bg-critical text-white shadow-sm hover:opacity-90;
+  }
+  .btn-good {
+    @apply border-good bg-good text-white shadow-sm hover:opacity-90;
+  }
+  .icon-btn {
+    @apply inline-flex size-8 items-center justify-center rounded-lg text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink;
+  }
+
+  /* --- formularios --- */
+  .field {
+    @apply flex min-w-0 flex-col gap-1.5;
+  }
+  .field-label {
+    @apply text-xs font-medium text-ink-2;
+  }
+  .field-hint {
+    @apply text-xs text-ink-3;
+  }
+  .input,
+  .select,
+  .textarea {
+    @apply w-full rounded-lg border border-line-strong bg-surface px-3 text-[13px] text-ink shadow-sm transition-[border-color,box-shadow] outline-none placeholder:text-ink-3 focus:border-accent focus:ring-3 focus:ring-(--focus) disabled:bg-surface-2 disabled:text-ink-3;
+  }
+  .input,
+  .select {
+    @apply h-9;
+  }
+  .textarea {
+    @apply py-2 font-mono text-xs leading-relaxed;
+  }
+  .input[aria-invalid='true'] {
+    @apply border-critical focus:ring-(--critical-soft);
+  }
+
+  /* --- superficies --- */
+  .card {
+    @apply rounded-xl border border-line bg-surface shadow-sm;
+  }
+  .card-header {
+    @apply flex items-center justify-between gap-3 border-b border-line px-4 py-3;
+  }
+  .card-title {
+    @apply text-sm font-semibold text-ink;
+  }
+  .card-subtitle {
+    @apply text-xs text-ink-3;
+  }
+
+  /* --- tablas de datos --- */
+  .data-table {
+    @apply w-full border-separate border-spacing-0 text-[13px];
+  }
+  .data-table thead th {
+    @apply sticky top-0 z-[1] border-b border-line bg-surface-2 px-4 py-2.5 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap text-ink-3 uppercase;
+  }
+  .data-table tbody td {
+    @apply border-b border-line px-4 py-2.5 whitespace-nowrap text-ink-2;
+  }
+  .data-table tbody tr {
+    @apply transition-colors;
+  }
+  .data-table tbody tr:hover td {
+    @apply bg-surface-2;
+  }
+  .data-table tbody tr[data-clickable='true'] {
+    @apply cursor-pointer;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .code {
+    @apply font-mono text-[12px] font-medium text-ink;
+  }
+
+  /* --- insignias --- */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap;
+  }
+  .badge-dot {
+    @apply size-1.5 shrink-0 rounded-full;
+  }
+  .badge-neutral {
+    @apply bg-surface-3 text-ink-2;
+  }
+  .badge-accent {
+    @apply bg-accent-soft text-accent-ink;
+  }
+  .badge-good {
+    @apply bg-good-soft text-good-ink;
+  }
+  .badge-warning {
+    @apply bg-warning-soft text-warning-ink;
+  }
+  .badge-serious {
+    @apply bg-serious-soft text-serious-ink;
+  }
+  .badge-critical {
+    @apply bg-critical-soft text-critical-ink;
+  }
+
+  .kbd {
+    @apply rounded border border-line-strong bg-surface-2 px-1 font-mono text-[10.5px] text-ink-3;
+  }
+  .segmented {
+    @apply inline-flex rounded-lg border border-line bg-surface-2 p-0.5;
+  }
+  .segmented > button {
+    @apply rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap text-ink-2 transition-colors hover:text-ink;
+  }
+  .segmented > button[aria-pressed='true'] {
+    @apply bg-surface text-ink shadow-sm;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop-in {
+  from {
+    transform: translateY(6px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-fade-in {
+  animation: fade-in 0.18s ease-out;
+}
+.animate-pop-in {
+  animation: pop-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
