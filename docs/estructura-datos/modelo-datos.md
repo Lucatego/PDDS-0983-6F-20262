@@ -1422,8 +1422,8 @@ Orden sugerido para el DDL: (1) catálogos y `parametro_sistema`; (2) `seg_*` (o
 | codigo | clave_front | nombre | duracion_dias | usa_reloj_real | aceleracion_defecto | usa_archivos_maestros | detiene_en_colapso |
 |---|---|---|---|---|---|---|---|
 | `DIA_A_DIA` | `diaria` | Operación día a día | — | TRUE | 0,0167 (tiempo real) | FALSE | FALSE |
-| `SIMULACION_5D` | `5d` | Simulación 5 días | 5 | FALSE | 2,6667 (5 días en 45 min) | TRUE | FALSE |
-| `COLAPSO` | `colapso` | Hasta el colapso | — | FALSE | 2,6667 | TRUE | TRUE |
+| `SIMULACION_5D` | `5d` | Simulación 5 días | 5 | FALSE | 4,0 (5 días en ~30 min) | TRUE | FALSE |
+| `COLAPSO` | `colapso` | Hasta el colapso | — | FALSE | 4,0 | TRUE | TRUE |
 
 ## 7.2. `cat_modalidad_entrega`
 
@@ -1583,7 +1583,7 @@ Cálculo de `incidencia.fecha_fin_prevista` (t = inicio de la avería, DD-05):
 | `TS_CANDIDATOS` | 400 | `ENTERO` | — | IEN |
 | `PRESUPUESTO_MS` | 0 | `ENTERO` | ms | DA-07 |
 | `SEMILLA` | 20262 | `ENTERO` | — | IEN |
-| `ACELERACION_5D` | 2.6667 | `DECIMAL` | min sim./s | LE058, DD-26 |
+| `ACELERACION_5D` | 4.0 | `DECIMAL` | min sim./s | LE058, DD-26 |
 | `TASA_AVERIAS_DIA` | 0 | `DECIMAL` | averías/día | LE078 |
 | `TRASVASE_HABILITADO` | false | `BOOLEANO` | — | DD-06 |
 | `TRASVASE_MINUTOS` | 30 | `ENTERO` | min | DD-06 |
@@ -1780,14 +1780,14 @@ Una ejecución completa hasta diciembre de 2028 (160 010 pedidos) llegaría a �
 
 # 11. DECISIONES DE DISEÑO Y SUPUESTOS
 
-Todas las decisiones de esta sección están **pendientes de aprobación del usuario**. Formato: Decisión · opciones · propuesta adoptada · justificación. Las referencias «D-n» remiten a la lista de discrepancias abiertas del contexto del proyecto (`CLAUDE.md`, §8).
+Estado de aprobación (30/09/2026): **aprobadas** DD-04, DD-12, DD-13, DD-20 y DD-26 con los ajustes indicados en cada fila; el resto está **pendiente de aprobación del usuario**. Formato: Decisión · opciones · propuesta adoptada · justificación. Las referencias «D-n» remiten a la lista de discrepancias abiertas del contexto del proyecto (`CLAUDE.md`, §8).
 
 | Id | Decisión | Opciones | Propuesta adoptada | Justificación |
 |---|---|---|---|---|
 | DD-01 | Representación del tiempo (D-9) | (a) minutos relativos al día 1 como en el cliente; (b) `TIMESTAMP` absoluto. | (b) `TIMESTAMP(3)` simulado en la BD; el backend deriva los minutos para el cliente con `epochDate`. | Coincide con `LocalDateTime` del núcleo; las ejecuciones empiezan en fechas distintas y los datos maestros son absolutos; los minutos relativos no se pueden compartir entre ejecuciones. |
 | DD-02 | Claves primarias | (a) códigos de negocio como PK; (b) PK sustituta + código UK. | (b) en tablas transaccionales; códigos naturales como PK en catálogos. | Simplifica el mapeo y las FK; los códigos siguen el formato del núcleo y son únicos. |
 | DD-03 | Identificadores en el contrato del cliente (D-8) | (a) cambiar el cliente a códigos de texto y mayúsculas; (b) mantener ids numéricos y claves en minúsculas, traducidas por el backend. | (b) `Order.id` = `pedido.id` numérico + nuevo `codigo`; columnas `clave_front` en catálogos y almacenes. | Cambio mínimo en el cliente ya construido; la BD conserva los códigos del núcleo (`CENTRAL`, `TA`). |
-| DD-04 | Plazo y hora de servicio (D-2) | (a) la entrega debe terminar antes de la hora límite (código, `plazoIncluyeServicio = true`); (b) basta con llegar antes (Q&A 11). | (b) por defecto, como parámetro `plazo_incluye_servicio = FALSE`; se guardan llegada y fin de servicio. | El Q&A oficial prevalece; guardar ambos instantes permite recalcular con la otra regla. El núcleo debe ejecutarse con `false`. |
+| DD-04 | Plazo y hora de servicio (D-2) | (a) la entrega debe terminar antes de la hora límite (código, `plazoIncluyeServicio = true`); (b) basta con llegar antes (Q&A 11). | (b) por defecto, como parámetro `plazo_incluye_servicio = FALSE`; se guardan llegada y fin de servicio. | El Q&A oficial prevalece; guardar ambos instantes permite recalcular con la otra regla. El núcleo recibe el valor por ejecución. La experimentación numérica (IEN v03, con `true`) no se rehace por ahora. |
 | DD-05 | Duración de averías (D-3) | Q&A (2 h / fin del turno siguiente / ≥ 2 días + traslado); cliente (20–150 min aleatorios); ALNS histórico (120/360/1440 min). | Reglas del Q&A en `cat_tipo_averia`; T2 = fin del turno siguiente al de la avería; T3 = primer turno de 15:00 ≥ t + 2 días; 4 h en el lugar para T2 y T3. | El Q&A es la fuente oficial. La interpretación exacta de «hasta el final del siguiente turno» y «al menos 2 días» debe confirmarse. |
 | DD-06 | Trasvase de carga | (a) no modelar; (b) modelar con tiempo fijo. | Columnas previstas (`paquetes_trasvasados`, `vehiculo_trasvase_id`) y parámetros `trasvase_habilitado = FALSE`, `trasvase_minutos = 30`. | El Q&A lo menciona sin regla cerrada; el modelo queda listo sin comprometer la lógica. |
 | DD-07 | Velocidades por defecto (D-4) | 40/25/12 km/h (enunciado, LE016, código) vs 20/40/14 (hoja Flota). | 40 / 25 / 12, como datos editables. | La hoja Flota contradice al enunciado y a la LE (una moto más rápida que un auto); probablemente es un error. |
@@ -1795,21 +1795,21 @@ Todas las decisiones de esta sección están **pendientes de aprobación del usu
 | DD-09 | Estados del pedido (D-6) | Diversas listas en LE039, LE013, CU, cliente e histórico. | `REGISTRADO`, `PLANIFICADO`, `REPROGRAMADO`, `EN_RUTA`, `ENTREGADO`, `NO_CUMPLIDO`, `ANULADO` (sección 8.1). | Cubre todas las fuentes; `PLANIFICADO` distingue plan provisional de despacho; `REPROGRAMADO` corresponde a «reasignado» de LE039. |
 | DD-10 | Estados del vehículo (D-6) | Cliente (7 estados) vs histórico (5). | Siete estados en español equivalentes a los del cliente (sección 8.2). | El cliente distingue ir, entregar y retornar, útil para el mapa; el histórico agrupa. |
 | DD-11 | Estados y fin de la ejecución | «Detener» como pausa (cliente) o como fin (LE060). | `PAUSADA` (reanudable) y `DETENIDA` (final, al reiniciar); motivo de fin en catálogo ampliado. | Respeta el comportamiento actual del cliente y LE060. |
-| DD-12 | Ciclo de planificación (D-10) | 15 min (LE026) vs 10 min (DAS, IEN, código). | `sa_minutos` configurable, por defecto 10. | La experimentación que sustenta la elección de TS usó Sa = 10; LE026 exige que sea parámetro. Actualizar LE026. |
-| DD-13 | Ventana del refrigerio (D-11) | Código: inicio en [turno + 1 h, turno + 7 h]; cliente: 4.ª–5.ª hora; LE018: al menos 1 h de distancia del cambio de turno. | Parámetros `descanso_desde_min = 60`, `descanso_hasta_min = 420`, `descanso_minutos = 60` (código). | Prioriza el código del planificador. Nota: con inicio a +7 h el refrigerio termina justo en el cambio de turno; si LE018 exige 1 h de distancia también al final, usar `descanso_hasta_min = 360`. |
+| DD-12 | Ciclo de planificación (D-10) | 15 min (LE026) vs 10 min (DAS, IEN, código). | `sa_minutos` configurable **por ejecución en los tres escenarios** (Día a día, 5D y Colapso), por defecto 10. | LE026 ya lo define como parámetro aplicable a los tres escenarios; solo difiere el valor por defecto (15 en la LE, 10 en la experimentación que sustenta la elección de TS). |
+| DD-13 | Ventana del refrigerio (D-11) | Código: inicio en [turno + 1 h, turno + 7 h]; cliente: 4.ª–5.ª hora; LE018: al menos 1 h de distancia del cambio de turno. | Parámetros `descanso_desde_min = 60`, `descanso_hasta_min = 420`, `descanso_minutos = 60` (código). | El inicio del refrigerio cae entre +1 h y +7 h del turno, como en el código del planificador, que se mantiene sin cambios. |
 | DD-14 | Umbrales del semáforo (D-12) | Por navegador (cliente) vs parámetro de ejecución (LE028, RNF04). | Persistidos en `configuracion_ejecucion` (70 / 35 por defecto); el cliente los recibe en el snapshot. | Todos los dispositivos deben ver los mismos colores; es requisito configurable. |
 | DD-15 | Stock inicial (D-13) | Código: lleno (1000); cliente: 76 % / 84 %. | `stock_inicial` = capacidad (100 %), editable por ejecución. | Coincide con el código y con la recarga diaria a capacidad (LE033). |
 | DD-16 | Pedidos y partes (D-7) | Persistir todas las partes provisionales o solo las despachadas; tope de cantidad. | Solo partes despachadas; el backend asigna el número `#n` al despachar (correlativo por pedido); sin tope de cantidad en la BD. | Las partes provisionales cambian en cada ciclo; en `SimulacionComparada` los códigos `#n` se reinician con la cantidad pendiente y pueden repetirse, por lo que la numeración persistente debe hacerla el backend. |
 | DD-17 | Retención de planes provisionales | (a) guardar todos los planes; (b) solo rutas comprometidas; (c) comprometidas + último plan. | (c) | Guía 79 pide la última planificación completa; guardar todos los planes multiplica el volumen sin uso claro. |
 | DD-18 | Demanda maestra vs estado por ejecución | (a) copiar la demanda en cada ejecución; (b) `pedido` inmutable + `pedido_ejecucion`. | (b), creando `pedido_ejecucion` al ingresar el pedido; factor de carga en la ejecución. | La Guía pregunta si la carga es previa e independiente de los 3 escenarios; evita duplicar 160 010 filas por ejecución. |
 | DD-19 | Nombres de archivo (D-15) | Q&A/LE (`ventas2026mm`, `aaaamm.bloqueadas`) vs datos reales (`ventas.AAAAMM.txt`, `bloqueo.AAMM.txt`). | Aceptar ambos patrones; guardar `nombre_original` y derivar `anio`/`mes`. | Evita rechazar los archivos reales y cumple LE071/LE073. |
-| DD-20 | Archivo de averías | `##d` como día del mes (como ventas) o relativo al inicio de la ejecución (cliente). | Relativo al día de inicio de la ejecución (`01d` = día de inicio); se guarda como `incidencia` `PROGRAMADA`. | No es un archivo oficial mensual: es propio de cada ejecución. |
+| DD-20 | Archivo de averías | `##d` como día del mes (como ventas) o relativo al inicio de la ejecución (cliente). | Relativo al día de inicio de la ejecución (`01d` = día de inicio); se guarda como `incidencia` `PROGRAMADA`. | Archivo temporal y propio de cada ejecución, no oficial. La conversión la hace el backend al construir `Averia(vehiculo, inicio, fin)`: **no requiere modificar el planificador**. |
 | DD-21 | Plan de mantenimiento | Solo el archivo 09.10 o expandirlo hasta 2029. | Tabla maestra con filas `ARCHIVO` y `GENERADO` (repetición bimestral hasta 31/12/2029); unidades inexistentes en la flota → incidencia `DESCARTADA`. | Q&A 19 pide generar el resto de archivos; la flota varía por ejecución. |
 | DD-22 | Almacenamiento del recorrido | (a) un registro por arista de 1 km; (b) tramos rectos compactados; (c) texto/JSON por ruta. | (b) `ruta_tramo`. | Reduce filas ~5–10 veces, mantiene horas por tramo para interpolar la posición y es consultable en SQL. |
 | DD-23 | Bitácora | FK específicas nulas vs tabla genérica de referencias. | FK nulas por entidad + `detalle` JSON. | Consultas simples; cubre «identificadores involucrados» (LE054). |
 | DD-24 | Enumeraciones | Catálogo o `CHECK`. | Catálogo cuando el valor tiene atributos o se muestra (estados, tipos); `CHECK` para enumeraciones internas (orígenes, tipos de movimiento, estados de ruta). | Equilibra integridad y número de tablas. |
 | DD-25 | Distancia para «en riesgo» (D-14) | Euclidiana (cliente) vs Manhattan. | Manhattan desde el central con la velocidad vigente del auto; el backend calcula y persiste `en_riesgo`. | La retícula no tiene diagonales (RN glosario). |
-| DD-26 | Aceleración del reloj | Cliente: 10 min simulados/s (5 días en 12 min). | Parámetro `aceleracion_reloj`; 5D por defecto 2,6667 (5 días en 45 min). | LE058 exige 30–60 min reales para 5D. |
+| DD-26 | Aceleración del reloj | Cliente: 10 min simulados/s (5 días en 12 min). | Parámetro `aceleracion_reloj`; 5D por defecto 4,0 (5 días en ~30 min). | LE058 exige 30–60 min reales para 5D; el valor se ajustará en las pruebas. |
 | DD-27 | Estrategia de persistencia | Escribir cada cambio al instante vs escribir por ciclo. | Estado vivo en memoria; una transacción por ciclo y por evento de negocio; snapshots no persistidos. | Rendimiento del 5D (DA-07) y consistencia de cada ciclo. |
 | DD-28 | Colapso | Un solo motivo o dos. | `COLAPSO_PLANIFICACION` (plan incompleto, criterio del código) y `COLAPSO_PLAZO` (vencimiento detectado por el reloj, criterio del cliente). | LE021 admite ambas lecturas; se registran por separado. |
 | DD-29 | Sc / K | Anticipar demanda (ALNS histórico) o no. | `sc_minutos = 0` (sin anticipación, modelo vigente); se guarda para responder la Guía. | El núcleo vigente no usa K/Sc. |

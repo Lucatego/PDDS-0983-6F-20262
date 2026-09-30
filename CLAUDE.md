@@ -200,8 +200,8 @@ Resueltas por el Q&A oficial:
 
 Abiertas:
 1. **Java**: DAS/estándar/IEN → 21; código compilado con 17; usuario → **25**.
-2. **Plazo y servicio**: Q&A 11 dice que la hora de entrega no cuenta en el plazo (basta llegar antes
-   del límite); el código usa `plazoIncluyeServicio = true` (exige terminar el servicio antes).
+2. ✅ **Plazo y servicio** (DD-04): parámetro por ejecución, por defecto `false` (Q&A 11: basta llegar antes
+   del límite). La experimentación (con `true`) no se rehace por ahora; `backend/application.yml` aún dice `true`.
 3. **Averías**: Q&A (2 h / fin del turno siguiente / ≥ 2 días + traslado al central) vs front (20–150 min
    aleatorios) vs ALNS histórico (120/360/1440 min) vs núcleo (solo intervalo, sin tipo).
 4. **Hoja Flota**: muestra velocidades 20 / 40 / 14 km/h (auto/moto/bici), distinto de 40/25/12 del
@@ -213,8 +213,8 @@ Abiertas:
 8. **Ids**: pedido numérico secuencial desde 1000 (front) vs `VAAAAMM-Lnnnnn` (código). Almacenes
    `central` vs `CENTRAL` vs `ALM-CENTRAL`.
 9. **Tiempo**: minutos relativos (front) vs `LocalDateTime` (núcleo).
-10. **Ciclo de planificación**: 15 min (LE026) vs Sa = 10 min.
-11. **Refrigerio**: front fijo 4.ª–5.ª hora vs código [1 h, 7 h] del turno.
+10. ✅ **Ciclo de planificación** (DD-12): Sa configurable por ejecución en los tres escenarios, por defecto 10 min.
+11. ✅ **Refrigerio** (DD-13): se mantiene el código, inicio en [turno + 1 h, turno + 7 h]; el front (4.ª–5.ª hora) debe alinearse.
 12. **Semáforo**: LE028/RNF04 lo piden como parámetro de ejecución; el front lo guarda por navegador.
 13. **Stock inicial**: front 76 % / 84 %; código 1000 (lleno).
 14. **Distancia**: el front usa euclidiana en `dist()` para cercanía/riesgo.
