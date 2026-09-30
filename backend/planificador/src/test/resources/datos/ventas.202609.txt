@@ -1,0 +1,6 @@
+# Fixture propio de pruebas (datos inventados, no provienen de los archivos del curso)
+01d06h00m:30,20,c0001,03,36
+01d07h15m:40,10,c0002,05,8
+01d07h45m:20,30,c0001,02,4
+01d08h00m:25,15,c0003,04,4
+01d09h00m:50,40,c0004,06,12
