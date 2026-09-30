@@ -1,2 +1,39 @@
+# .gitignore general del repositorio. frontend/ y backend/ tienen además el suyo propio.
+
 # Código temporal de los algoritmos (copia local para análisis, no versionar)
 _tmp/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE y editores
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+
+# Dependencias y salidas de compilación
+node_modules/
+dist/
+target/
+coverage/
+
+# Variables de entorno y configuración local
+.env
+.env.*
+!.env.example
+*.local
+
+# Registros
+*.log
+logs/
+
+# Archivos temporales de Office y LibreOffice
+~$*
+.~lock.*#
+
+# Claude Code: se versionan las definiciones de agentes, no la configuración local
+.claude/settings.local.json
