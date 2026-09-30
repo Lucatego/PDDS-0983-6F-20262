@@ -43,10 +43,10 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 
 | Id | Tarea | Estado |
 |---|---|---|
-| D-01 | SGBD | ⬜ |
-| D-02 | Frameworks del backend (ORM/acceso a datos, migraciones, WebSocket/STOMP, pruebas) | ⬜ |
+| D-01 | SGBD: **PostgreSQL** (30/09/2026) | ✅ |
+| D-02 | Frameworks del backend (ORM/acceso a datos, migraciones, WebSocket/STOMP, pruebas). Propuesta del orquestador en P-03 | ⬜ |
 | D-03 | Planificador: **módulo Maven en este repo con núcleo común + Tabu Search** (TS es el algoritmo seleccionado; ALNS queda fuera) | ✅ |
-| D-04 | Discrepancias de `CLAUDE.md` §8 que afectan datos: plazo vs servicio, averías, estados, ids, tiempo, ciclo 10/15 min, flota por defecto | ⬜ |
+| D-04 | Discrepancias de `CLAUDE.md` §8 que afectan datos → resueltas en DD-01..DD-31 | ✅ |
 | D-05 | `.docx` con formato similar a los demás documentos del curso; prioridad al contenido | ✅ |
 
 ### F1 — Modelo de datos (redactor; el orquestador revisa y el usuario aprueba)
@@ -57,7 +57,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | M-02 | Inventario de datos del backend y planificador | sección en `modelo-datos.md` | ✅ v1.0 borrador |
 | M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 borrador |
 | M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 borrador |
-| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `modelo-datos.md`) | versión 1.0 congelada | ⬜ |
+| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `modelo-datos.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026) | ✅ |
 
 ### F2 — Documento de estructura de datos (redactor)
 
@@ -89,7 +89,17 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | I-01 | Ajustes del contrato del frontend (rutas, paradas, partes, estados unificados) | ⬜ |
 | I-02 | Prueba de punta a punta con `VITE_DATA_SOURCE=server` | ⬜ |
 
-## 4. Reglas para los agentes
+## 4. Pendientes para revisar con el usuario
+
+| Id | Pendiente | Detalle | Cuándo |
+|---|---|---|---|
+| P-01 | Alinear `plazo-incluye-servicio` del backend | `backend/aplicacion/src/main/resources/application.yml` tiene `plazo-incluye-servicio: true` (valor del código y de la experimentación). DD-04 aprobó `false` por defecto (Q&A 11) como parámetro **por ejecución**. Cambiarlo cuando la configuración se lea de `configuracion_ejecucion`; decidir si el valor global del yml pasa a `false` o se elimina. La experimentación (IEN v03) no se rehace por ahora. | Al programar B-05 (simulación) |
+| P-02 | Regenerar el `.docx` cuando cambie el modelo | El `.docx` se genera desde `modelo-datos.md` con el script del redactor (no versionado, carpeta temporal de la sesión). Si el script se pierde, pedirlo de nuevo al agente `redactor`. El índice es texto fijo: se recalcula al regenerar. | Con cada cambio del modelo |
+| P-03 | Librerías del backend (D-02) | Propuesta: Spring Data JPA, Flyway, `spring-boot-starter-websocket` (STOMP), `spring-boot-starter-webmvc-test`, y reemplazar `spring-boot-starter-web` (obsoleto en Boot 4) por `spring-boot-starter-webmvc`. No afecta al modelo de datos. | Antes de lanzar B-03 |
+| P-04 | Correcciones en documentos del equipo | RN-INC-CAL-01 cita LE111/LE112 (no existen); LE091 dice «cliente» donde debería decir unidad; LE026 tiene 15 min por defecto (el modelo usa 10); LE049 y RN-INV-RES-01 tienen almacenes desactualizados; CU-05 copia a CU-04. | Próxima versión de LE/RN/CU |
+| P-05 | Ajustes del frontend al modelo | Ver §9.2 de `modelo-datos.md`: códigos de pedido, flota por defecto 10/15/12, duración de averías del Q&A, refrigerio del código, umbrales del semáforo desde el servidor, 5D en ~30 min, tiempos `##d` como día del mes. | Tarea I-01 |
+
+## 5. Reglas para los agentes
 
 - Leer `CLAUDE.md` y esta tabla antes de empezar; trabajar solo en su rama y su worktree.
 - El modelo de datos se cambia **solo** en `modelo-datos.md` y lo cambia el orquestador.

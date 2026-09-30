@@ -26,7 +26,7 @@ El documento cubre:
 * Los catálogos y parámetros del sistema, las máquinas de estado propuestas y la correspondencia entre tablas, clases del núcleo Java y tipos del cliente web.
 * Las tablas de seguridad (usuarios y roles), marcadas como **opcionales**, porque la arquitectura solo las propone.
 
-Queda fuera del alcance la elección del SGBD (decisión DA-10 del DAS, aún abierta), del marco de persistencia y del DDL definitivo. Por ello se usan tipos SQL estándar; el DDL final se ajustará al SGBD elegido (secuencias o columnas de identidad, índices parciales, columnas generadas, tipo JSON, etc.).
+El SGBD elegido es **PostgreSQL** (decisión DA-10 del DAS, cerrada el 30/09/2026; DD-31). Queda fuera del alcance la elección del marco de persistencia y el DDL definitivo, que se escribirá en PostgreSQL a partir de este diccionario. El diccionario usa tipos SQL estándar; la sección 2.3 indica su equivalente en PostgreSQL.
 
 ## 1.3. Definiciones, siglas y abreviaturas
 
@@ -99,22 +99,22 @@ Principio rector: **la demanda cargada es inmutable y la ejecución guarda su pr
 
 ## 2.3. Tipos de datos
 
-Se usan tipos SQL estándar; la tabla indica el uso y la correspondencia con Java.
+Se usan tipos SQL estándar; la tabla indica el uso, el tipo equivalente en PostgreSQL (SGBD elegido, DD-31) y la correspondencia con Java.
 
-| Tipo SQL | Uso | Tipo Java sugerido |
-|---|---|---|
-| `BIGINT` | Claves sustitutas (generadas por identidad o secuencia, según el SGBD), semillas, contadores grandes. | `long` / `Long` |
-| `INTEGER` | Cantidades de paquetes, contadores, minutos enteros. | `int` / `Integer` |
-| `SMALLINT` | Coordenadas (0–70, 0–50), plazos, números de turno, órdenes pequeños. | `int` / `short` |
-| `NUMERIC(p,s)` | Distancias, costos, velocidades, minutos fraccionarios, porcentajes, Ta. | `BigDecimal` o `double` |
-| `VARCHAR(n)` | Códigos y textos cortos. | `String` / `enum` |
-| `CHAR(n)` | Códigos de longitud fija (`TA`, hash SHA-256 de 64 caracteres). | `String` |
-| `TEXT` | Textos largos (diagnóstico, detalle JSON). En SQL estándar, `CLOB`; en algunos SGBD, `JSON`. | `String` |
-| `BOOLEAN` | Indicadores. | `boolean` |
-| `DATE` | Fechas sin hora (día de mantenimiento). | `LocalDate` |
-| `TIME` | Horas del día (hora de recarga). | `LocalTime` |
-| `TIMESTAMP(3)` | Instantes **simulados**, con milisegundos y sin zona horaria. | `LocalDateTime` |
-| `TIMESTAMP(3) WITH TIME ZONE` | Instantes del **reloj real** (auditoría, Ta, duración real). | `OffsetDateTime` / `Instant` |
+| Tipo SQL | Uso | PostgreSQL | Tipo Java sugerido |
+|---|---|---|---|
+| `BIGINT` | Claves sustitutas (generadas por identidad), semillas, contadores grandes. | `BIGINT`; claves `BIGINT GENERATED ALWAYS AS IDENTITY` | `long` / `Long` |
+| `INTEGER` | Cantidades de paquetes, contadores, minutos enteros. | `INTEGER` | `int` / `Integer` |
+| `SMALLINT` | Coordenadas (0–70, 0–50), plazos, números de turno, órdenes pequeños. | `SMALLINT` | `int` / `short` |
+| `NUMERIC(p,s)` | Distancias, costos, velocidades, minutos fraccionarios, porcentajes, Ta. | `NUMERIC(p,s)` | `BigDecimal` o `double` |
+| `VARCHAR(n)` | Códigos y textos cortos. | `VARCHAR(n)` | `String` / `enum` |
+| `CHAR(n)` | Códigos de longitud fija (`TA`, hash SHA-256 de 64 caracteres). | `CHAR(n)` | `String` |
+| `TEXT` | Textos largos (diagnóstico). En SQL estándar, `CLOB`. | `TEXT`; el detalle JSON de la bitácora como `JSONB` | `String` |
+| `BOOLEAN` | Indicadores. | `BOOLEAN` | `boolean` |
+| `DATE` | Fechas sin hora (día de mantenimiento). | `DATE` | `LocalDate` |
+| `TIME` | Horas del día (hora de recarga). | `TIME` | `LocalTime` |
+| `TIMESTAMP(3)` | Instantes **simulados**, con milisegundos y sin zona horaria. | `TIMESTAMP(3)` (sin zona) | `LocalDateTime` |
+| `TIMESTAMP(3) WITH TIME ZONE` | Instantes del **reloj real** (auditoría, Ta, duración real). | `TIMESTAMPTZ(3)` | `OffsetDateTime` / `Instant` |
 
 ## 2.4. Claves e identificadores
 
@@ -1780,7 +1780,7 @@ Una ejecución completa hasta diciembre de 2028 (160 010 pedidos) llegaría a �
 
 # 11. DECISIONES DE DISEÑO Y SUPUESTOS
 
-Estado de aprobación (30/09/2026): **aprobadas** DD-04, DD-12, DD-13, DD-20 y DD-26 con los ajustes indicados en cada fila; el resto está **pendiente de aprobación del usuario**. Formato: Decisión · opciones · propuesta adoptada · justificación. Las referencias «D-n» remiten a la lista de discrepancias abiertas del contexto del proyecto (`CLAUDE.md`, §8).
+Estado de aprobación (30/09/2026): **todas las decisiones están aprobadas por el usuario**, con la condición de que se ajusten a las especificaciones (LE, reglas de negocio, Q&A oficial) y a las necesidades del negocio. DD-04, DD-12, DD-13, DD-20, DD-26 y DD-31 incluyen los ajustes indicados en su fila. Formato: Decisión · opciones · propuesta adoptada · justificación. Las referencias «D-n» remiten a la lista de discrepancias abiertas del contexto del proyecto (`CLAUDE.md`, §8).
 
 | Id | Decisión | Opciones | Propuesta adoptada | Justificación |
 |---|---|---|---|---|
@@ -1814,7 +1814,7 @@ Estado de aprobación (30/09/2026): **aprobadas** DD-04, DD-12, DD-13, DD-20 y D
 | DD-28 | Colapso | Un solo motivo o dos. | `COLAPSO_PLANIFICACION` (plan incompleto, criterio del código) y `COLAPSO_PLAZO` (vencimiento detectado por el reloj, criterio del cliente). | LE021 admite ambas lecturas; se registran por separado. |
 | DD-29 | Sc / K | Anticipar demanda (ALNS histórico) o no. | `sc_minutos = 0` (sin anticipación, modelo vigente); se guarda para responder la Guía. | El núcleo vigente no usa K/Sc. |
 | DD-30 | Seguridad | Implementar o no. | Tablas `seg_*` opcionales; columnas `registrado_por` nulas. | El DAS solo la propone. |
-| DD-31 | Java y SGBD (D-1) | Java 21/17/25; SGBD sin definir. | Tipos SQL estándar y correspondencia con tipos Java independientes de la versión (≥ 17). | No afecta al modelo; el DDL final depende del SGBD (DA-10). |
+| DD-31 | Java y SGBD (D-1) | Java 21/17/25; SGBD sin definir. | **Java 25** y **PostgreSQL**. El diccionario usa tipos SQL estándar con su equivalente en PostgreSQL (sección 2.3); índices únicos parciales, columnas generadas y `JSONB` disponibles. | Decisión del usuario (30/09/2026). El DDL se escribirá en PostgreSQL. |
 
 Supuestos adicionales:
 

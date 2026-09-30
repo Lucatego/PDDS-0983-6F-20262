@@ -199,7 +199,7 @@ Resueltas por el Q&A oficial:
   de inicio de la corrida (a corregir en el front si se mantiene el modo local).
 
 Abiertas:
-1. **Java**: DAS/estándar/IEN → 21; código compilado con 17; usuario → **25**.
+1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). DAS/estándar/IEN aún dicen Java 21.
 2. ✅ **Plazo y servicio** (DD-04): parámetro por ejecución, por defecto `false` (Q&A 11: basta llegar antes
    del límite). La experimentación (con `true`) no se rehace por ahora; `backend/application.yml` aún dice `true`.
 3. **Averías**: Q&A (2 h / fin del turno siguiente / ≥ 2 días + traslado al central) vs front (20–150 min
@@ -228,8 +228,8 @@ Abiertas:
 Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
-  borrador v1.0 del modelo de datos (`docs/estructura-datos/modelo-datos.md`, 44 tablas, decisiones DD-01..DD-31
-  pendientes de aprobación). Tablero de tareas en `TAREAS.md`.
+  modelo de datos v1.0 **aprobado** (`docs/estructura-datos/modelo-datos.md` + `.docx`, 44 tablas, DD-01..DD-31,
+  PostgreSQL). Tablero y pendientes (P-01..P-05) en `TAREAS.md`.
 Pasos siguientes (confirmar cada uno con el usuario):
 2. Inventario de datos del front (tipos, estados, catálogos, qué es persistente vs efímero).
 3. Inventario de datos del back (modelo del núcleo, parámetros, ejecuciones, ciclos, bitácora, indicadores).
