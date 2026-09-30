@@ -252,7 +252,7 @@ solución integrada `sol.integrada.sem08`.
 
 ## 11. Mapa de fuentes
 
-`context/` (no versionado en git). Los `.md` traen imágenes base64: filtrar con
+`context/` (versionado en git). Los `.md` traen imágenes base64: filtrar con
 `sed -E '/^\[image[0-9]+\]: <data:image/d' archivo.md`.
 
 | Archivo | Contenido |

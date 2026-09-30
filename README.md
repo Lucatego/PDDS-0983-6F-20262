@@ -47,7 +47,7 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 ```
 .
 ├── frontend/     Cliente web React (ver frontend/README.md)
-├── context/      Documentación del curso en Markdown (no versionada)
+├── context/      Documentación del curso en Markdown
 ├── CLAUDE.md     Contexto consolidado del proyecto para asistentes de IA
 └── README.md
 ```
