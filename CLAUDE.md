@@ -227,6 +227,9 @@ Abiertas:
 
 Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
+Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
+  borrador v1.0 del modelo de datos (`docs/estructura-datos/modelo-datos.md`, 44 tablas, decisiones DD-01..DD-31
+  pendientes de aprobación). Tablero de tareas en `TAREAS.md`.
 Pasos siguientes (confirmar cada uno con el usuario):
 2. Inventario de datos del front (tipos, estados, catálogos, qué es persistente vs efímero).
 3. Inventario de datos del back (modelo del núcleo, parámetros, ejecuciones, ciclos, bitácora, indicadores).

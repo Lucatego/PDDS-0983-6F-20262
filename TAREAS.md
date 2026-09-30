@@ -14,6 +14,9 @@ sus propias tareas. Contexto del proyecto en `CLAUDE.md`.
 | Backend · simulación | Agente `back-sim` | Reloj, escenarios, ciclos de planificación, incidencias, indicadores | `feature/backend-simulacion` → `../wt-back-sim` |
 | Backend · API | Agente `back-api` | REST `/api` y STOMP `/ws` según el contrato del frontend | `feature/backend-api` → `../wt-back-api` |
 
+Definiciones de agente en `.claude/agents/`: `redactor` (Sonnet 5.5, esfuerzo medium) y `backend` (Sonnet 5.5,
+esfuerzo high). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
+
 Cada agente trabaja en su propio `git worktree` (carpeta hermana del repo) para no pisar archivos.
 Flujo: rama de trabajo → PR/merge a `develop` revisado por el orquestador → `main` en cada hito.
 
@@ -50,27 +53,27 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 
 | Id | Tarea | Entregable | Estado |
 |---|---|---|---|
-| M-01 | Inventario de datos del frontend | sección en `modelo-datos.md` | 🔄 |
-| M-02 | Inventario de datos del backend y planificador | sección en `modelo-datos.md` | 🔄 |
-| M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | 🔄 |
-| M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | 🔄 |
-| M-05 | Aprobación del usuario | versión 1.0 congelada | ⬜ |
+| M-01 | Inventario de datos del frontend | sección en `modelo-datos.md` | ✅ v1.0 borrador |
+| M-02 | Inventario de datos del backend y planificador | sección en `modelo-datos.md` | ✅ v1.0 borrador |
+| M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 borrador |
+| M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 borrador |
+| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `modelo-datos.md`) | versión 1.0 congelada | ⬜ |
 
 ### F2 — Documento de estructura de datos (redactor)
 
 | Id | Tarea | Estado |
 |---|---|---|
-| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | 🔄 |
-| R-02 | Redactar a partir de `modelo-datos.md`; tablas del diccionario y diagrama ER | 🔄 |
-| R-03 | Trazabilidad entidad ↔ LE/CU/RN | 🔄 |
-| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` | 🔄 |
+| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0 borrador |
+| R-02 | Redactar a partir de `modelo-datos.md`; tablas del diccionario y diagrama ER | ✅ v1.0 borrador |
+| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0 borrador |
+| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` | ✅ v1.0 borrador |
 
 ### F3 — Backend
 
 | Id | Agente | Tarea | Depende de | Estado |
 |---|---|---|---|---|
-| B-01 | back-base | Proyecto `backend/` Spring Boot + Maven (wrapper) + Java 25, sin BD ni WebSocket todavía | — | 🔄 |
-| B-02 | back-base | Módulo `planificador` (núcleo común + TS) con sus pruebas en JUnit 5 en verde | D-03 | 🔄 |
+| B-01 | back-base | Proyecto `backend/` Spring Boot 4.1.1 + Maven (wrapper) + Java 25, sin BD ni WebSocket todavía | — | ✅ |
+| B-02 | back-base | Módulo `planificador` (núcleo común + TS) con sus pruebas en JUnit en verde (41 pruebas) | D-03 | ✅ |
 | B-03 | back-datos | Migraciones con el DDL del modelo aprobado | M-05 | ⬜ |
 | B-04 | back-datos | Carga de ventas, bloqueos, mantenimiento y averías a la BD (ids deterministas) | B-03 | ⬜ |
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ⬜ |
