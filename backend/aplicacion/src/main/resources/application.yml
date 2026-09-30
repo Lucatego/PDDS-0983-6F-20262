@@ -1,0 +1,39 @@
+# Configuración del backend de PaqRap (Centro de Operaciones).
+# Cualquier valor se puede sobrescribir con variables de entorno (p. ej. PAQRAP_PLANIFICADOR_TABU_SEMILLA=7)
+# o argumentos (--paqrap.planificador.tabu.semilla=7).
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: paqrap-backend
+
+paqrap:
+  # Filtrada desde el POM al compilar (spring-boot-starter-parent usa el delimitador @...@).
+  version: "@project.version@"
+  planificador:
+    # Tabu Search: valores del experimento del IEN v03 (TS(300, 7, 30, 400, 0, 20262)).
+    tabu:
+      max-iteraciones: 300
+      tenencia-tabu: 7
+      sin-mejora-max: 30
+      candidatos-por-iteracion: 400
+      presupuesto-ms: 0          # 0 = sin límite de tiempo (reproducible con la misma semilla)
+      semilla: 20262
+    # Parámetros de operación: ParametrosOperacion.porDefecto() del núcleo.
+    operacion:
+      servicio-minutos: 60
+      plazo-incluye-servicio: true   # discrepancia abierta con la respuesta 11 del Q&A (CLAUDE.md §8.2)
+      turno-minutos: 480
+      inicio-turno-minuto: 420       # 07:00
+      descanso-desde: 60             # el refrigerio INICIA entre turno+60 y turno+420 min
+      descanso-hasta: 420
+      descanso-minutos: 60
+      tamanio-parte: 4
+      costo-fijo-vehiculo: 50
+      penalizacion-paquete-pendiente: 1000000
+      velocidades:                   # km/h por tipo de vehículo
+        TA: 40.0
+        TM: 25.0
+        TB: 12.0

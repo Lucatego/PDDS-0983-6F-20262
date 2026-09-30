@@ -1,0 +1,21 @@
+# Salidas de compilación de Maven
+target/
+# Maven Wrapper: solo se versionan mvnw, mvnw.cmd y .mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/*.zip
+
+# IDE y sistema operativo
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+bin/
+out/
+.DS_Store
+
+# Registros locales
+*.log
+logs/
