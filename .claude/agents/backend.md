@@ -19,5 +19,5 @@ Reglas:
 - Estándares (`CLAUDE.md` §10): nombres en español, 4 espacios, K&R, 120 columnas, Javadoc citando LE/RNF, colecciones con orden estable, infactibilidad como estado y no como excepción.
 - Pruebas con JUnit; `./mvnw -q verify` en verde antes de terminar.
 - No toques `CLAUDE.md`, `README.md` ni `TAREAS.md` de la raíz, ni `frontend/` salvo encargo explícito; `_tmp/` es de solo lectura.
-- Commits en español, en imperativo, terminando con `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Sin push ni merge.
+- Commits con el formato `tipo: descripción` (`fix`, `feat`, `docs`, `refactor`, `test`; ver `CLAUDE.md` §10), en español, en imperativo, terminando con `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Sin push ni merge.
 - Termina con un informe para el orquestador: qué hiciste, pruebas y resultado, decisiones o dependencias pendientes.

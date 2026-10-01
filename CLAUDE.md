@@ -261,7 +261,16 @@ solución integrada `sol.integrada.sem08`.
   (`LinkedHashMap`) por reproducibilidad; infactibilidad = estado, no excepción; excepciones de dominio
   específicas; validar en el punto de carga; Maven + Spring Boot.
 - Git: ramas `feature/AGxx-descripcion`, PR con revisión por pares, main siempre ejecutable, tags por
-  hito. Commits en imperativo citando LE cuando aplique.
+  hito.
+- Commits: **siempre** con el formato `tipo: descripción`, en español, en imperativo y citando LE cuando aplique.
+  Tipos permitidos:
+  - `fix:` arregla un bug.
+  - `feat:` agrega una funcionalidad nueva.
+  - `docs:` documentación nueva o actualizada (`context/` u otros `.md`).
+  - `refactor:` cambia el código sin arreglar un bug ni agregar nada nuevo.
+  - `test:` pruebas en el código.
+
+  Ejemplo: `feat: agrega la carga de ventas a la BD (LE008)`.
 - GUI: tokens de color claro/oscuro, estados nunca solo por color, confirmación modal en Reiniciar.
 
 ## 11. Mapa de fuentes

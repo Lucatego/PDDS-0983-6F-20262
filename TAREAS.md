@@ -116,5 +116,6 @@ implicados, acción sugerida) y se cierran con el usuario.
 - Después de que el redactor cree o actualice un documento, el orquestador lanza al `auditor` antes de darlo
   por cerrado; un veredicto `NO CONCUERDA` impide cerrar la tarea hasta resolver sus alertas críticas.
 - No adoptar librerías fuera de las decididas en D-02 sin consultar.
-- Commits en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.
+- Commits con el formato `tipo: descripción` (`fix`, `feat`, `docs`, `refactor`, `test`; ver `CLAUDE.md` §10),
+  en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.
 - `_tmp/` es de solo lectura.
