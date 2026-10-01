@@ -23,6 +23,8 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   generados desde los `.md`. Nada de `docs/` se versiona ni se edita a mano por separado.
 - El agente `redactor` crea o actualiza los `.md` de `context/` y genera el `.docx` en `docs/` siguiendo
   `FORMATO-DOCUMENTOS.md` (formato obligatorio de todos los `.docx`).
+- El agente `auditor` (solo lectura) revisa cada documento nuevo o actualizado contra los anteriores de
+  `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
 - El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md`; es la fuente para el DDL.
@@ -259,7 +261,16 @@ solución integrada `sol.integrada.sem08`.
   (`LinkedHashMap`) por reproducibilidad; infactibilidad = estado, no excepción; excepciones de dominio
   específicas; validar en el punto de carga; Maven + Spring Boot.
 - Git: ramas `feature/AGxx-descripcion`, PR con revisión por pares, main siempre ejecutable, tags por
-  hito. Commits en imperativo citando LE cuando aplique.
+  hito.
+- Commits: **siempre** con el formato `tipo: descripción`, en español, en imperativo y citando LE cuando aplique.
+  Tipos permitidos:
+  - `fix:` arregla un bug.
+  - `feat:` agrega una funcionalidad nueva.
+  - `docs:` documentación nueva o actualizada (`context/` u otros `.md`).
+  - `refactor:` cambia el código sin arreglar un bug ni agregar nada nuevo.
+  - `test:` pruebas en el código.
+
+  Ejemplo: `feat: agrega la carga de ventas a la BD (LE008)`.
 - GUI: tokens de color claro/oscuro, estados nunca solo por color, confirmación modal en Reiniciar.
 
 ## 11. Mapa de fuentes

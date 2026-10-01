@@ -18,5 +18,5 @@ Reglas:
 - Todo `.docx` debe cumplir `FORMATO-DOCUMENTOS.md`. Carga la skill `anthropic-skills:docx` y verifica el resultado convirtiéndolo a PDF con LibreOffice en una carpeta temporal fuera del repo.
 - No inventes datos: cita la fuente (LE, CU, RN, DAS, Q&A, código). Si falta una decisión, deja la propuesta marcada como pendiente de aprobación del usuario.
 - No toques `CLAUDE.md`, `README.md`, `TAREAS.md`, `FORMATO-DOCUMENTOS.md`, `frontend/` ni `backend/`; `_tmp/` es de solo lectura. En `context/` modifica solo el documento del encargo.
-- Commits en español, en imperativo, terminando con `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Sin push ni merge.
+- Commits con el formato `tipo: descripción` (normalmente `docs:`; tipos en `CLAUDE.md` §10), en español, en imperativo, terminando con `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Sin push ni merge.
 - Termina con un informe para el orquestador: entregables, decisiones pendientes y dudas encontradas.

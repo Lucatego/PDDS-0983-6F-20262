@@ -9,13 +9,14 @@ sus propias tareas. Contexto del proyecto en `CLAUDE.md`.
 |---|---|---|---|
 | Orquestador | Sesión principal | Resolver decisiones con el usuario, definir el contenido de la **fuente única del modelo de datos** (`context/24.dis.estructura.datos.v01.md`), asignar tareas, revisar e integrar ramas | `develop` (raíz del repo) |
 | Redactor | Agente `redactor` | Crear y actualizar los `.md` de `context/` (fuente versionada de los entregables) con el contenido que define el orquestador, y generar el `.docx` en `docs/` (salidas, no versionada) según `FORMATO-DOCUMENTOS.md` | `docs/redaccion` → `../wt-redactor` |
+| Auditor | Agente `auditor` | Comprobar que cada documento nuevo o actualizado (`.md` de `context/` y su `.docx` en `docs/`) concuerda con los documentos anteriores, considerando los cambios aprobados (DD-xx, D-xx, Q&A), y emitir alertas cuando no concuerde. Solo lee e informa; el orquestador registra las alertas en §4 | Sin rama: solo lectura sobre `develop` |
 | Backend · base | Agente `back-base` | Proyecto Spring Boot (Java 25, Maven), módulo planificador, configuración común | `feature/backend-base` → `../wt-back-base` |
 | Backend · persistencia | Agente `back-datos` | DDL/migraciones, entidades, repositorios, carga de archivos a la BD | `feature/backend-persistencia` → `../wt-back-datos` |
 | Backend · simulación | Agente `back-sim` | Reloj, escenarios, ciclos de planificación, incidencias, indicadores | `feature/backend-simulacion` → `../wt-back-sim` |
 | Backend · API | Agente `back-api` | REST `/api` y STOMP `/ws` según el contrato del frontend | `feature/backend-api` → `../wt-back-api` |
 
-Definiciones de agente en `.claude/agents/`: `redactor` (Sonnet 5.5, esfuerzo medium) y `backend` (Sonnet 5.5,
-esfuerzo high). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
+Definiciones de agente en `.claude/agents/`: `redactor` (Sonnet 5.5, esfuerzo medium), `backend` (Sonnet 5.5,
+esfuerzo high) y `auditor` (Sonnet 5.5, esfuerzo high, solo lectura; aún no se ha lanzado). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
 
 Cada agente trabaja en su propio `git worktree` (carpeta hermana del repo) para no pisar archivos.
 Flujo: rama de trabajo → PR/merge a `develop` revisado por el orquestador → `main` en cada hito.
@@ -102,6 +103,9 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | P-05 | Ajustes del frontend al modelo | Ver §9.2 de `modelo-datos.md`: códigos de pedido, flota por defecto 10/15/12, duración de averías del Q&A, refrigerio del código, umbrales del semáforo desde el servidor, 5D en ~30 min, tiempos `##d` como día del mes. | Tarea I-01 |
 | P-06 | Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
 
+Las alertas del agente `auditor` se registran en esta tabla con id `A-nn` (gravedad, documentos y secciones
+implicados, acción sugerida) y se cierran con el usuario.
+
 ## 5. Reglas para los agentes
 
 - Leer `CLAUDE.md` y esta tabla antes de empezar; trabajar solo en su rama y su worktree.
@@ -109,6 +113,9 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
   cambio con el usuario y el redactor lo escribe. Los agentes de backend no lo modifican.
 - `context/` es la única documentación versionada; `docs/` es una carpeta local de salidas (`.docx`, PDF) en
   `.gitignore` y no existe en los worktrees. Detalle en `CLAUDE.md` §1.
+- Después de que el redactor cree o actualice un documento, el orquestador lanza al `auditor` antes de darlo
+  por cerrado; un veredicto `NO CONCUERDA` impide cerrar la tarea hasta resolver sus alertas críticas.
 - No adoptar librerías fuera de las decididas en D-02 sin consultar.
-- Commits en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.
+- Commits con el formato `tipo: descripción` (`fix`, `feat`, `docs`, `refactor`, `test`; ver `CLAUDE.md` §10),
+  en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.
 - `_tmp/` es de solo lectura.
