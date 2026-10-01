@@ -23,6 +23,8 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   generados desde los `.md`. Nada de `docs/` se versiona ni se edita a mano por separado.
 - El agente `redactor` crea o actualiza los `.md` de `context/` y genera el `.docx` en `docs/` siguiendo
   `FORMATO-DOCUMENTOS.md` (formato obligatorio de todos los `.docx`).
+- El agente `auditor` (solo lectura) revisa cada documento nuevo o actualizado contra los anteriores de
+  `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
 - El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md`; es la fuente para el DDL.
