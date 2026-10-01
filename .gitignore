@@ -37,3 +37,6 @@ logs/
 
 # Claude Code: se versionan las definiciones de agentes, no la configuración local
 .claude/settings.local.json
+
+# Salidas generadas (.docx, PDF, scripts de generación). La fuente versionada está en context/
+docs/

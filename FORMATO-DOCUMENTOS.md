@@ -5,7 +5,8 @@ Salieron de la revisión del Documento de Estructura de Datos (`24.dis.estructur
 y se aplican igual a los documentos futuros. Si el usuario pide algo distinto en un encargo concreto, prevalece
 lo que pida el usuario.
 
-> Fuente única: el contenido vive en el `.md` y el `.docx` se genera desde él (ver `.claude/agents/redactor.md`).
+> Fuente única: el contenido vive en el `.md` de `context/` (versionado) y el `.docx` se genera desde él en `docs/`
+> (carpeta local de salidas, en `.gitignore`). Ver `CLAUDE.md` §1 y `.claude/agents/redactor.md`.
 > Este archivo define solo **cómo se ve** el `.docx`, no qué dice.
 
 ## 1. Reglas obligatorias
@@ -38,9 +39,13 @@ alineado a la izquierda con número de página a la derecha.
   Restricción · Descripción): usar siempre la misma grilla, para que todas las tablas se vean iguales y no se
   parta `VARCHAR(20)` ni los códigos de las restricciones:
 
-  `1700 · 1560 · 580 · 660 · 810 · 1860 · 1856` (suma 9026).
+  `1560 · 1560 · 580 · 960 · 900 · 1750 · 1716` (suma 9026).
 
   Un identificador largo (`minuto_inicio_turno_retorno`) puede partirse en la columna Columna; es aceptable.
+- **Demás tablas** (definiciones, referencias, catálogos de la sección 7, máquinas de estado, correspondencias, decisiones,
+  matriz de trazabilidad): ajustar los anchos al contenido, de modo que la palabra más larga de cada columna quepa sin partirse
+  y el resto del ancho vaya a las columnas con más texto. Las tablas con el mismo encabezado (p. ej. `Desde · Evento · Hacia`)
+  comparten la misma grilla. En tablas de 8 o 9 columnas algunos nombres de columna se parten; es inevitable en A4 vertical.
 - Cada tabla va después de su texto introductorio y lleva debajo, en este orden y cuando aplique:
   `Restricciones:` y `Trazabilidad:`.
 
@@ -86,9 +91,8 @@ Cargar la skill `anthropic-skills:docx`. Para que el formato quede consistente y
 
 ## 6. Pendientes conocidos
 
-- El **índice es texto fijo**, no un campo de Word: sus números de página hay que revisarlos en Word al cerrar cada versión
-  (o convertirlo a tabla de contenido automática si el equipo lo aprueba).
-- LibreOffice y Word paginan con una página de diferencia en algunas secciones; la verificación final de páginas se hace en Word.
-- Las secciones **6.3 en adelante** de `24.dis.estructura.datos` aún no se reformatearon: tienen los anchos de columna antiguos
-  (se parte `VARCHAR(12)` en la columna Tipo) y tamaños sueltos en el cuerpo.
+- El **índice es texto fijo**, no un campo de Word. Sus números de página se actualizaron con la paginación de LibreOffice
+  (documento de 76 páginas tras aplicar el formato completo); al cerrar cada versión hay que revisarlos en Word, porque
+  LibreOffice y Word pueden diferir en una página (o convertirlo a tabla de contenido automática si el equipo lo aprueba).
 - La justificación en columnas estrechas deja huecos entre palabras; es consecuencia de la regla «todo justificado» y se aceptó.
+- Todo documento nuevo o editado debe cerrar con la verificación de la sección 5 (puntos 5 y 6).

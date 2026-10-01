@@ -47,8 +47,12 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 ```
 .
 ├── frontend/     Cliente web React (ver frontend/README.md)
-├── context/      Documentación del curso en Markdown
+├── backend/      Servidor Spring Boot y módulo planificador (ver backend/README.md)
+├── context/      Documentación versionada en Markdown (curso y entregables del equipo)
+├── docs/         Salidas generadas (.docx, PDF); carpeta local, no versionada
 ├── CLAUDE.md     Contexto consolidado del proyecto para asistentes de IA
+├── TAREAS.md     Tablero de tareas y pendientes
+├── FORMATO-DOCUMENTOS.md   Formato de los entregables .docx
 └── README.md
 ```
 
@@ -79,6 +83,7 @@ tiempo real por STOMP en `/ws`. El contrato completo está en [`frontend/README.
 | `21.dis.selec.algoritmos.v03` | Selección de algoritmos (Tabu Search y ALNS) |
 | `22.dis.experim.v03` | Experimentación numérica TS vs ALNS |
 | `23.dis.arquitectura.solucion.v01` | Arquitectura de la solución |
+| `24.dis.estructura.datos.v01` | Diseño de estructura de datos (modelo de datos, PostgreSQL) |
 | `51.plan.proyecto.v01` | Plan de proyecto y cronograma |
 | `61.std.GUI.v01` | Estándar de interfaz gráfica |
 | `62.std.programacion.v01` | Estándar de programación y uso de Git |

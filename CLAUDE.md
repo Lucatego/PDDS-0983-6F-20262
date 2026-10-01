@@ -15,6 +15,18 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   Cubre los datos del front y del back. Plan en §9.
 - `_tmp/` es una copia temporal de solo lectura (en `.gitignore`); no modificarla.
 
+### Documentos: fuente en `context/`, salidas en `docs/`
+
+- `context/` es la **única carpeta de documentación versionada**: documentos del curso y la fuente `.md` de
+  los entregables del equipo. El contenido de un documento se crea y se actualiza **solo** en su `.md` de `context/`.
+- `docs/` es una carpeta **local de salidas** y está en `.gitignore`: ahí van los `.docx`, PDF y demás archivos
+  generados desde los `.md`. Nada de `docs/` se versiona ni se edita a mano por separado.
+- El agente `redactor` crea o actualiza los `.md` de `context/` y genera el `.docx` en `docs/` siguiendo
+  `FORMATO-DOCUMENTOS.md` (formato obligatorio de todos los `.docx`).
+- Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
+  está disponible; las salidas se escriben en el `docs/` del repositorio principal.
+- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md`; es la fuente para el DDL.
+
 ## 2. El caso en una página
 
 PaqRap vende un único producto **P** y lo entrega en la ciudad (retícula 70 × 50 km). Hoy planifica
@@ -228,7 +240,7 @@ Abiertas:
 Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
-  modelo de datos v1.0 **aprobado** (`docs/estructura-datos/modelo-datos.md` + `.docx`, 44 tablas, DD-01..DD-31,
+  modelo de datos v1.0 **aprobado** (`context/24.dis.estructura.datos.v01.md`, 44 tablas, DD-01..DD-31,
   PostgreSQL). Tablero y pendientes (P-01..P-05) en `TAREAS.md`.
 Pasos siguientes (confirmar cada uno con el usuario):
 2. Inventario de datos del front (tipos, estados, catálogos, qué es persistente vs efímero).
@@ -264,6 +276,7 @@ solución integrada `sol.integrada.sem08`.
 | `21.dis.selec.algoritmos.v03.md` | ISA: TS y ALNS, pseudocódigo, operadores |
 | `22.dis.experim.v03.md` | IEN: experimento TS vs ALNS, EstadoOperacion, función objetivo |
 | `23.dis.arquitectura.solucion.v01.md` | DAS: vistas, entidades, decisiones DA-01..10, riesgos |
+| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente** (44 tablas, DD-01..DD-31, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
 | `51.plan.proyecto.v01.md` | Plan, cronograma por semana, roles, estructura de repo |
 | `61.std.GUI.v01.md` | Estándar de interfaz (≈1,3 MB por imágenes) |
 | `62.std.programacion.v01.md` | Estándar de programación y Git |

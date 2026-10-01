@@ -7,8 +7,8 @@ sus propias tareas. Contexto del proyecto en `CLAUDE.md`.
 
 | Rol | Quién | Responsabilidad | Rama / worktree |
 |---|---|---|---|
-| Orquestador | Sesión principal | Resolver decisiones con el usuario, mantener la **fuente única del modelo de datos** (`docs/estructura-datos/modelo-datos.md`), asignar tareas, revisar e integrar ramas | `develop` (raíz del repo) |
-| Redactor | Agente `redactor` | Elaborar el modelo de datos (`modelo-datos.md`) y el entregable `.docx` con formato del curso | `docs/estructura-datos` → `../wt-redactor` |
+| Orquestador | Sesión principal | Resolver decisiones con el usuario, definir el contenido de la **fuente única del modelo de datos** (`context/24.dis.estructura.datos.v01.md`), asignar tareas, revisar e integrar ramas | `develop` (raíz del repo) |
+| Redactor | Agente `redactor` | Crear y actualizar los `.md` de `context/` (fuente versionada de los entregables) con el contenido que define el orquestador, y generar el `.docx` en `docs/` (salidas, no versionada) según `FORMATO-DOCUMENTOS.md` | `docs/redaccion` → `../wt-redactor` |
 | Backend · base | Agente `back-base` | Proyecto Spring Boot (Java 25, Maven), módulo planificador, configuración común | `feature/backend-base` → `../wt-back-base` |
 | Backend · persistencia | Agente `back-datos` | DDL/migraciones, entidades, repositorios, carga de archivos a la BD | `feature/backend-persistencia` → `../wt-back-datos` |
 | Backend · simulación | Agente `back-sim` | Reloj, escenarios, ciclos de planificación, incidencias, indicadores | `feature/backend-simulacion` → `../wt-back-sim` |
@@ -32,7 +32,9 @@ F0 ──► F3a Backend base ─┼──► F3c Simulación ────┼─
 
 - F3a puede empezar apenas se cierren las decisiones de stack (no depende del modelo).
 - F3b, F3c y F3d esperan el modelo de datos **aprobado** (F1).
-- F2 y F3 corren en paralelo sobre el mismo `modelo-datos.md`: el `.docx` no se edita a mano por separado.
+- F2 y F3 corren en paralelo sobre el mismo `context/24.dis.estructura.datos.v01.md` (antes
+  `docs/estructura-datos/modelo-datos.md`; en este tablero «`modelo-datos.md`» se refiere a ese archivo):
+  el `.docx` no se edita a mano por separado.
 - Agentes activos ahora: **redactor** y **back-base**. Los demás se lanzan cuando se cierren D-01, D-02, D-04 y M-05.
 
 ## 3. Tareas
@@ -66,7 +68,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0 borrador |
 | R-02 | Redactar a partir de `modelo-datos.md`; tablas del diccionario y diagrama ER | ✅ v1.0 borrador |
 | R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0 borrador |
-| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` | ✅ v1.0 borrador |
+| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.0 borrador |
 
 ### F3 — Backend
 
@@ -94,15 +96,19 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|
 | P-01 | Alinear `plazo-incluye-servicio` del backend | `backend/aplicacion/src/main/resources/application.yml` tiene `plazo-incluye-servicio: true` (valor del código y de la experimentación). DD-04 aprobó `false` por defecto (Q&A 11) como parámetro **por ejecución**. Cambiarlo cuando la configuración se lea de `configuracion_ejecucion`; decidir si el valor global del yml pasa a `false` o se elimina. La experimentación (IEN v03) no se rehace por ahora. | Al programar B-05 (simulación) |
-| P-02 | Regenerar el `.docx` cuando cambie el modelo | El `.docx` se genera desde `modelo-datos.md` con el script del redactor (no versionado, carpeta temporal de la sesión). Si el script se pierde, pedirlo de nuevo al agente `redactor`. El índice es texto fijo: se recalcula al regenerar. | Con cada cambio del modelo |
+| P-02 | Regenerar el `.docx` cuando cambie el modelo | El `.docx` se genera en `docs/` desde `context/24.dis.estructura.datos.v01.md` con el script del redactor y el formato de `FORMATO-DOCUMENTOS.md`. El script no está versionado: guardarlo en `docs/` (salidas locales) y, si se pierde, pedirlo de nuevo al agente `redactor`. El índice es texto fijo: se recalcula al regenerar. | Con cada cambio del modelo |
 | P-03 | Librerías del backend (D-02) | Propuesta: Spring Data JPA, Flyway, `spring-boot-starter-websocket` (STOMP), `spring-boot-starter-webmvc-test`, y reemplazar `spring-boot-starter-web` (obsoleto en Boot 4) por `spring-boot-starter-webmvc`. No afecta al modelo de datos. | Antes de lanzar B-03 |
 | P-04 | Correcciones en documentos del equipo | RN-INC-CAL-01 cita LE111/LE112 (no existen); LE091 dice «cliente» donde debería decir unidad; LE026 tiene 15 min por defecto (el modelo usa 10); LE049 y RN-INV-RES-01 tienen almacenes desactualizados; CU-05 copia a CU-04. | Próxima versión de LE/RN/CU |
 | P-05 | Ajustes del frontend al modelo | Ver §9.2 de `modelo-datos.md`: códigos de pedido, flota por defecto 10/15/12, duración de averías del Q&A, refrigerio del código, umbrales del semáforo desde el servidor, 5D en ~30 min, tiempos `##d` como día del mes. | Tarea I-01 |
+| P-06 | Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
 
 ## 5. Reglas para los agentes
 
 - Leer `CLAUDE.md` y esta tabla antes de empezar; trabajar solo en su rama y su worktree.
-- El modelo de datos se cambia **solo** en `modelo-datos.md` y lo cambia el orquestador.
+- El modelo de datos se cambia **solo** en `context/24.dis.estructura.datos.v01.md`: el orquestador decide el
+  cambio con el usuario y el redactor lo escribe. Los agentes de backend no lo modifican.
+- `context/` es la única documentación versionada; `docs/` es una carpeta local de salidas (`.docx`, PDF) en
+  `.gitignore` y no existe en los worktrees. Detalle en `CLAUDE.md` §1.
 - No adoptar librerías fuera de las decididas en D-02 sin consultar.
 - Commits en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.
 - `_tmp/` es de solo lectura.

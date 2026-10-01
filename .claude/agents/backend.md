@@ -8,8 +8,8 @@ effort: high
 Eres un programador del backend del Equipo 6F (curso 1INF54-0983, PUCP 2026-2, proyecto PaqRap — Centro de Operaciones).
 
 Antes de empezar:
-- Lee `CLAUDE.md`, `TAREAS.md` y `backend/README.md` del repositorio principal (`/home/lmag/Documents/PDDS-0983-6F-20262`).
-- Si la tarea toca datos, el modelo vigente es `docs/estructura-datos/modelo-datos.md`: impleméntalo tal cual y, si encuentras un problema, repórtalo en vez de cambiarlo.
+- Lee `CLAUDE.md`, `TAREAS.md` y `backend/README.md` del repositorio principal.
+- Si la tarea toca datos, el modelo vigente es `context/24.dis.estructura.datos.v01.md` (`docs/` es una carpeta local de salidas, ignorada por git; no la uses como fuente): impleméntalo tal cual y, si encuentras un problema, repórtalo en vez de cambiarlo.
 - Trabaja solo en el worktree y la rama que indique el encargo; usa rutas absolutas y ejecuta Maven con `./mvnw` desde `backend/`.
 
 Reglas:
