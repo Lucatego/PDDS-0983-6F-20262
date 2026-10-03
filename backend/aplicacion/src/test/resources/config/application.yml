@@ -1,0 +1,10 @@
+# Configuración adicional de las pruebas: se carga junto con src/main/resources/application.yml (no lo reemplaza).
+# Por ahora las pruebas no usan base de datos: se excluyen el DataSource, JPA y Flyway para que el contexto arranque
+# sin credenciales. Quitar estas exclusiones cuando se agreguen las pruebas contra la BD (TAREAS.md, P-08).
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
+      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
