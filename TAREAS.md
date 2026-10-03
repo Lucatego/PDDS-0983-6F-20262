@@ -16,7 +16,7 @@ sus propias tareas. Contexto del proyecto en `CLAUDE.md`.
 | Backend · API | Agente `back-api` | REST `/api` y STOMP `/ws` según el contrato del frontend | `feature/backend-api` → `../wt-back-api` |
 
 Definiciones de agente en `.claude/agents/`: `redactor` (Sonnet 5.5, esfuerzo medium), `backend` (Sonnet 5.5,
-esfuerzo high) y `auditor` (Sonnet 5.5, esfuerzo high, solo lectura; aún no se ha lanzado). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
+esfuerzo high) y `auditor` (Sonnet 5.5, esfuerzo high, solo lectura; primera auditoría el 02/10/2026, P-06). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
 
 Cada agente trabaja en su propio `git worktree` (carpeta hermana del repo) para no pisar archivos.
 Flujo: rama de trabajo → PR/merge a `develop` revisado por el orquestador → `main` en cada hito.
@@ -55,20 +55,20 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 
 | Id | Tarea | Entregable | Estado |
 |---|---|---|---|
-| M-01 | Inventario de datos del frontend | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 borrador |
-| M-02 | Inventario de datos del backend y planificador | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 borrador |
-| M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 borrador |
-| M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 borrador |
-| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026) | ✅ |
+| M-01 | Inventario de datos del frontend | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 aprobado |
+| M-02 | Inventario de datos del backend y planificador | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 aprobado |
+| M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 aprobado |
+| M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 aprobado |
+| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026); v1.0.1 el 02/10/2026 (corrección editorial, A-01) | ✅ |
 
 ### F2 — Documento de estructura de datos (redactor)
 
 | Id | Tarea | Estado |
 |---|---|---|
-| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0 borrador |
-| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.0 borrador |
-| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0 borrador |
-| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.0 borrador |
+| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0.1 |
+| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.0.1 |
+| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0.1 |
+| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.0.1 (regenerado el 02/10/2026, 73 páginas) |
 
 ### F3 — Backend
 
@@ -103,8 +103,8 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | P-06 | ✅ Cerrado (02/10/2026, commit 57f8564; auditoría: CONCUERDA CON OBSERVACIONES) · Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
 | P-07 | Contenedor local de PostgreSQL | Por ahora la BD está en AWS (credenciales en `backend/.env`). Más adelante crear un contenedor (p. ej. `compose.yaml` con PostgreSQL) para desarrollo y laboratorio, sin servicios externos (DAS). | Más adelante |
 | P-08 | Pruebas contra la base de datos | Las pruebas excluyen hoy DataSource, JPA y Flyway (`backend/aplicacion/src/test/resources/config/application.yml`). Definir cómo probar contra PostgreSQL (`@DataJpaTest`, Testcontainers u otra; consultar librerías) y quitar las exclusiones. | Cuando avise el usuario |
-| A-01 | Auditoría P-06 · OBSERVACIÓN | `24.dis.estructura.datos.v01`: el historial tiene dos filas con versión 1.0 (30/09 y 02/10) y la línea 3 dice «Versión 1.0 · 30/09/2026»; la portada del `.docx` lleva 2 de octubre de 2026. Decidir si las correcciones editoriales suben a 1.0.1 o se mantiene 1.0. | Con el usuario |
-| A-02 | Auditoría P-06 · OBSERVACIÓN | Índice del `.docx`: el número de página va con un tabulador literal en el texto y solo se verificó en LibreOffice (73 páginas). Revisar en Word; ver `FORMATO-DOCUMENTOS.md` §6. | Al cerrar la versión |
+| A-01 | ✅ Cerrado (02/10/2026) · Auditoría P-06 · OBSERVACIÓN | `24.dis.estructura.datos.v01`: el historial tenía dos filas con versión 1.0 (30/09 y 02/10). Decisión del usuario: la corrección editorial sube el documento a **1.0.1** (commit 20a110a; `.docx` regenerado, 73 páginas). Auditoría: CONCUERDA CON OBSERVACIONES. | Resuelto |
+| A-02 | Auditoría P-06 · OBSERVACIÓN | Índice del `.docx`: el número de página va con un tabulador literal en el texto y solo se verificó en LibreOffice (73 páginas). Revisar en Word; ver `FORMATO-DOCUMENTOS.md` §6. | Más adelante (no urgente) |
 
 Las alertas del agente `auditor` se registran en esta tabla con id `A-nn` (gravedad, documentos y secciones
 implicados, acción sugerida) y se cierran con el usuario.

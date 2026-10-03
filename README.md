@@ -40,7 +40,7 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 | Cliente web | React 19, TypeScript, Vite, Tailwind, Zustand, TanStack Query, ECharts, STOMP | Construido (`frontend/`) |
 | Servidor de aplicación | Spring Boot 4.1, Java 25, Maven; Spring MVC, STOMP, Spring Data JPA, Flyway | En construcción: base lista (`backend/`) |
 | Planificador | Java, núcleo común + Tabu Search (ALNS solo en la experimentación) | Construido: módulo `backend/planificador`, copiado del repositorio de algoritmos (`DP1-G6F-Prototipo`) |
-| Base de datos | PostgreSQL (por ahora en AWS; credenciales en `backend/.env`) | Modelo de datos v1.0 aprobado; esquema pendiente (migraciones Flyway) |
+| Base de datos | PostgreSQL (por ahora en AWS; credenciales en `backend/.env`) | Modelo de datos v1.0.1 aprobado; esquema pendiente (migraciones Flyway) |
 
 ## Estructura del repositorio
 
@@ -92,7 +92,7 @@ tiempo real por STOMP en `/ws`. El contrato completo está en [`frontend/README.
 
 - [x] Análisis, arquitectura y experimentación numérica
 - [x] Cliente web con motor de simulación local
-- [x] Documento de diseño de estructura de datos (modelo v1.0 aprobado, PostgreSQL)
+- [x] Documento de diseño de estructura de datos (modelo v1.0.1 aprobado, PostgreSQL)
 - [x] Base del servidor Spring Boot con el planificador Tabu Search y la conexión a PostgreSQL
 - [ ] Base de datos: esquema y carga de archivos
 - [ ] Simulación, incidencias, indicadores y API REST/STOMP
