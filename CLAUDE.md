@@ -11,8 +11,8 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
 - **Consultar antes de proponer/adoptar cualquier framework o librería** (front o back).
 - Stack fijado por el usuario: **frontend React** (ya construido) y **backend Spring Boot con Java 25**
   (documentos del curso: Java 21; código de algoritmos compilado con `--release 17`; prevalece Java 25).
-- Objetivo actual: **Documento de Diseño de Estructura de Datos**, base para crear las tablas SQL.
-  Cubre los datos del front y del back. Plan en §9.
+- Objetivo actual: **construir el backend** sobre el modelo de datos aprobado (esquema PostgreSQL con Flyway,
+  carga de archivos, simulación, API) e integrarlo con el front. Plan en §9 y tablero en `TAREAS.md`.
 - `_tmp/` es una copia temporal de solo lectura (en `.gitignore`); no modificarla.
 
 ### Documentos: fuente en `context/`, salidas en `docs/`
@@ -27,7 +27,8 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
-- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md`; es la fuente para el DDL.
+- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.0.1); es la fuente para el DDL.
+  Su `.docx` se regenera con `docs/estructura-datos/generar_docx.js` (local, no versionado; ver `TAREAS.md` P-02).
 
 ## 2. El caso en una página
 
@@ -108,7 +109,8 @@ para los 3 escenarios; también pide la última planificación completa en el re
 ## 5. Arquitectura (fuente: `23.dis.arquitectura.solucion`)
 
 - Cliente-servidor en capas. Cliente web (React) ↔ servidor Spring Boot (REST + canal en tiempo real)
-  ↔ BD relacional (SGBD **pendiente**, DA-10). Todo corre en el laboratorio, sin servicios externos.
+  ↔ BD relacional **PostgreSQL** (DA-10 cerrada con DD-31/D-01). El DAS pide que todo corra en el laboratorio,
+  sin servicios externos; por ahora la BD de desarrollo está en AWS (contenedor local pendiente, P-07).
 - Planificador = biblioteca Java detrás de `PlanificadorEstricto` (§6). El reloj, los ciclos (Sa), la
   carga de archivos y la persistencia son responsabilidad del backend, no de los algoritmos.
 - Experimentación (IEN v03, 40 corridas): **TS gana** en tiempo de planificación (Ta medio 13 598 ms
@@ -205,36 +207,38 @@ React 19 + TS 5.9 + Vite 8 + Tailwind 4 + Zustand 5 + TanStack Query 5 + ECharts
   capacity,stock,dispatchedToday}`; `Stats{deliveredTotal,onTime,late,cost,distanceKm,byPriority,bySector}`.
 - Solo en el navegador (localStorage): tema, **umbrales del semáforo** (70 % / 35 %), filtros del mapa.
 
-## 8. Discrepancias (resolver al diseñar los datos)
+## 8. Discrepancias (resueltas en el modelo de datos salvo indicación)
 
 Resueltas por el Q&A oficial:
 - ✅ Posición de almacenes: vigente Central (27,14), Este (57,27). LE049 y RN-INV-RES-01 están desactualizados.
 - ✅ `##d` de los archivos = día del mes del archivo. El motor local del front lo toma relativo a la fecha
   de inicio de la corrida (a corregir en el front si se mantiene el modo local).
 
-Abiertas:
+Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026) o abiertas:
 1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). DAS/estándar/IEN aún dicen Java 21.
 2. ✅ **Plazo y servicio** (DD-04): parámetro por ejecución, por defecto `false` (Q&A 11: basta llegar antes
    del límite). La experimentación (con `true`) no se rehace por ahora; `backend/application.yml` aún dice `true`.
-3. **Averías**: Q&A (2 h / fin del turno siguiente / ≥ 2 días + traslado al central) vs front (20–150 min
-   aleatorios) vs ALNS histórico (120/360/1440 min) vs núcleo (solo intervalo, sin tipo).
-4. **Hoja Flota**: muestra velocidades 20 / 40 / 14 km/h (auto/moto/bici), distinto de 40/25/12 del
-   enunciado y del código. Probable error de la hoja; confirmar.
-5. **Tamaño de flota por defecto**: Q&A y código 10/15/12; front 6/10/8.
-6. **Estados**: pedido (LE039, LE013, CU, front, histórico) y vehículo (front vs histórico) sin máquina única.
-7. **Pedidos y partes**: front limita cantidad 1–24 y 1 pedido por vehículo; núcleo divide en partes ≤ 4
-   y agrupa varias partes/pedidos por ruta (LE027). El contrato del front no tiene Ruta/Parada/Parte.
-8. **Ids**: pedido numérico secuencial desde 1000 (front) vs `VAAAAMM-Lnnnnn` (código). Almacenes
-   `central` vs `CENTRAL` vs `ALM-CENTRAL`.
-9. **Tiempo**: minutos relativos (front) vs `LocalDateTime` (núcleo).
+3. ✅ **Averías** (DD-05): reglas del Q&A en `cat_tipo_averia` (T1 2 h; T2 fin del turno siguiente; T3 primer turno
+   de 15:00 ≥ t + 2 días; 4 h en el lugar para T2/T3). Por confirmar la lectura exacta del Q&A; trasvase previsto
+   pero deshabilitado (DD-06). El front (20–150 min aleatorios) debe alinearse (P-05).
+4. ✅ **Velocidades** (DD-07): 40 / 25 / 12 km/h editables; la hoja Flota (20 / 40 / 14) se considera un error.
+5. ✅ **Tamaño de flota** (DD-08): 10 / 15 / 12; el front (6/10/8) debe tomarlo de `GET /catalogos`.
+6. ✅ **Estados** (DD-09, DD-10, DD-11): máquinas de estado únicas de pedido, vehículo y ejecución (modelo §8).
+7. ✅ **Pedidos y partes** (DD-16, DD-17): se persisten solo las partes despachadas (numeradas por el backend),
+   las rutas comprometidas y el último plan. El contrato del front aún no tiene Ruta/Parada/Parte (I-01, P-05).
+8. ✅ **Ids** (DD-02, DD-03): tablas transaccionales con PK numérica + `codigo` UK (pedido: `VAAAAMM-Lnnnnn`);
+   almacén y catálogos con el código del núcleo como PK (`CENTRAL`, `TA`). El front recibe ids numéricos y
+   claves en minúsculas (`clave_front`) que traduce el backend.
+9. ✅ **Tiempo** (DD-01): `TIMESTAMP(3)` simulado en la BD; el backend deriva los minutos del front.
 10. ✅ **Ciclo de planificación** (DD-12): Sa configurable por ejecución en los tres escenarios, por defecto 10 min.
 11. ✅ **Refrigerio** (DD-13): se mantiene el código, inicio en [turno + 1 h, turno + 7 h]; el front (4.ª–5.ª hora) debe alinearse.
-12. **Semáforo**: LE028/RNF04 lo piden como parámetro de ejecución; el front lo guarda por navegador.
-13. **Stock inicial**: front 76 % / 84 %; código 1000 (lleno).
-14. **Distancia**: el front usa euclidiana en `dist()` para cercanía/riesgo.
-15. **Nombres de archivo**: Q&A/LE (`aaaamm.bloqueadas`, `ventas2026mm`) vs datos reales (`bloqueo.AAMM.txt`, `ventas.AAAAMM.txt`).
+12. ✅ **Semáforo** (DD-14): umbrales en `configuracion_ejecucion` (70 / 35), enviados en el snapshot; el front
+   deja de guardarlos por navegador (P-05).
+13. ✅ **Stock inicial** (DD-15): 100 % de la capacidad, editable por ejecución.
+14. ✅ **Distancia** (DD-25): Manhattan; el backend calcula y persiste `en_riesgo`.
+15. ✅ **Nombres de archivo** (DD-19): se aceptan ambos patrones (Q&A/LE y datos reales) y se guarda el nombre original.
 16. **Numeración AG**: la LE v03 difiere de Visión/DAS. Usar la LE v03 salvo indicación contraria.
-17. **CU-05** (Gestión de almacenes) es copia de CU-04.
+17. **CU-05** (Gestión de almacenes) es copia de CU-04 (corrección pendiente, P-04).
 18. **Estructura de repo**: el plan pide `/src/planificador`, `/src/visualizador`, `/data`…; el repo usa `frontend/`.
 
 ## 9. Plan de trabajo actual
@@ -242,18 +246,18 @@ Abiertas:
 Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
-  modelo de datos v1.0 **aprobado** (`context/24.dis.estructura.datos.v01.md`, 44 tablas, DD-01..DD-31,
-  PostgreSQL). Tablero y pendientes en `TAREAS.md`.
+  modelo de datos v1.0 **aprobado** el 30/09/2026 (`context/24.dis.estructura.datos.v01.md`, 44 tablas,
+  DD-01..DD-31, PostgreSQL); v1.0.1 (02/10/2026) corrige el estado de aprobación. Tablero en `TAREAS.md`.
 Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webmvc`), validation, websocket (STOMP),
   Spring Data JPA, Flyway (+ `flyway-database-postgresql`), driver PostgreSQL; pruebas con `starter-test` y
   `starter-webmvc-test`. BD en AWS con credenciales en `backend/.env` (plantilla `.env.example`); contenedor local
   y pruebas contra la BD pendientes (P-07, P-08).
-Pasos siguientes (confirmar cada uno con el usuario):
-2. Inventario de datos del front (tipos, estados, catálogos, qué es persistente vs efímero).
-3. Inventario de datos del back (modelo del núcleo, parámetros, ejecuciones, ciclos, bitácora, indicadores).
-4. Resolver discrepancias de §8 con el usuario.
-5. Modelo conceptual → lógico (entidades, atributos, tipos, claves, relaciones, restricciones, catálogos).
-6. Documento de Diseño de Estructura de Datos (base para el DDL SQL). SGBD a decidir con el usuario.
+Pasos siguientes (confirmar cada uno con el usuario; detalle y dependencias en `TAREAS.md` §3):
+2. B-03 Migraciones Flyway con el DDL del modelo aprobado y B-04 carga de archivos a la BD.
+3. B-05 a B-07 Simulación: reloj, escenarios, ciclo Sa, incidencias, bitácora e indicadores.
+4. B-08 y B-09 API REST y difusión STOMP según el contrato del front.
+5. I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
+Pendientes abiertos con el usuario: P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md` §4).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
 solución integrada `sol.integrada.sem08`.
@@ -291,7 +295,7 @@ solución integrada `sol.integrada.sem08`.
 | `21.dis.selec.algoritmos.v03.md` | ISA: TS y ALNS, pseudocódigo, operadores |
 | `22.dis.experim.v03.md` | IEN: experimento TS vs ALNS, EstadoOperacion, función objetivo |
 | `23.dis.arquitectura.solucion.v01.md` | DAS: vistas, entidades, decisiones DA-01..10, riesgos |
-| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente** (44 tablas, DD-01..DD-31, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
+| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.0.1 (44 tablas, DD-01..DD-31, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
 | `51.plan.proyecto.v01.md` | Plan, cronograma por semana, roles, estructura de repo |
 | `61.std.GUI.v01.md` | Estándar de interfaz (≈1,3 MB por imágenes) |
 | `62.std.programacion.v01.md` | Estándar de programación y Git |
