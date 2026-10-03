@@ -243,7 +243,11 @@ Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
   modelo de datos v1.0 **aprobado** (`context/24.dis.estructura.datos.v01.md`, 44 tablas, DD-01..DD-31,
-  PostgreSQL). Tablero y pendientes (P-01..P-05) en `TAREAS.md`.
+  PostgreSQL). Tablero y pendientes en `TAREAS.md`.
+Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webmvc`), validation, websocket (STOMP),
+  Spring Data JPA, Flyway (+ `flyway-database-postgresql`), driver PostgreSQL; pruebas con `starter-test` y
+  `starter-webmvc-test`. BD en AWS con credenciales en `backend/.env` (plantilla `.env.example`); contenedor local
+  y pruebas contra la BD pendientes (P-07, P-08).
 Pasos siguientes (confirmar cada uno con el usuario):
 2. Inventario de datos del front (tipos, estados, catálogos, qué es persistente vs efímero).
 3. Inventario de datos del back (modelo del núcleo, parámetros, ejecuciones, ciclos, bitácora, indicadores).
