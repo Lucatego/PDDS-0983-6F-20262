@@ -8,6 +8,22 @@ server:
 spring:
   application:
     name: paqrap-backend
+  # Credenciales de la base de datos en un archivo .env (no versionado; plantilla en backend/.env.example).
+  # Se busca en el directorio de trabajo y en el superior: sirve al ejecutar desde backend/ (jar) y desde
+  # backend/aplicacion (spring-boot:run). Las variables de entorno del sistema tienen prioridad sobre el .env.
+  config:
+    import: "optional:file:./.env[.properties],optional:file:../.env[.properties]"
+  # PostgreSQL (D-01). Sin valores por defecto: si faltan las credenciales, la aplicación no arranca.
+  datasource:
+    url: ${PAQRAP_DB_URL}
+    username: ${PAQRAP_DB_USUARIO}
+    password: ${PAQRAP_DB_CLAVE}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate           # el esquema lo crean las migraciones de Flyway, no Hibernate
+  flyway:
+    locations: classpath:db/migration   # scripts V<n>__<descripcion>.sql (tarea B-03)
 
 paqrap:
   # Filtrada desde el POM al compilar (spring-boot-starter-parent usa el delimitador @...@).

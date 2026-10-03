@@ -4,14 +4,43 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: base del backend (tareas B-01 y B-02 de `TAREAS.md`). Todavía no hay base de datos, WebSocket ni los
-endpoints del contrato del frontend; esas decisiones están pendientes (D-01, D-02, D-04).
+Estado: base del backend (tareas B-01 y B-02 de `TAREAS.md`) con las librerías decididas (D-02) y la conexión a
+PostgreSQL (D-01). Todavía no hay esquema (migraciones, B-03), WebSocket configurado ni los endpoints del contrato
+del frontend.
 
 ## Requisitos
 
 - **JDK 25** (`java -version` debe indicar 25). Probado con OpenJDK 25.0.4.
 - No hace falta instalar Maven: se usa el **Maven Wrapper** (`mvnw`/`mvnw.cmd`), que descarga Maven 3.9.16 la
   primera vez en `~/.m2/wrapper`. Requiere acceso a Maven Central.
+- Para ejecutar la aplicación: acceso a una base **PostgreSQL** y el archivo `backend/.env` (ver «Base de datos»).
+  Las pruebas no lo necesitan.
+
+## Base de datos
+
+Por ahora la base está en **AWS** (PostgreSQL en RDS); un contenedor local queda pendiente (P-07 de `TAREAS.md`).
+Las credenciales van en `backend/.env`, que está en `.gitignore` y **no se versiona**:
+
+```bash
+cp .env.example .env    # desde backend/, y completar los tres valores
+```
+
+| Variable | Contenido |
+|---|---|
+| `PAQRAP_DB_URL` | `jdbc:postgresql://<host>:5432/<base>?sslmode=require` (RDS exige SSL) |
+| `PAQRAP_DB_USUARIO` | Usuario de la base |
+| `PAQRAP_DB_CLAVE` | Contraseña |
+
+- `application.yml` importa el `.env` con `spring.config.import` desde el directorio de trabajo o su superior, así
+  que funciona con `java -jar` desde `backend/` y con `spring-boot:run` (que corre en `backend/aplicacion`). Una
+  variable de entorno del sistema con el mismo nombre tiene prioridad sobre el `.env`.
+- Sin credenciales la aplicación **no arranca** (error `'url' must start with "jdbc"` al crear el `dataSource`).
+  El *security group* de RDS debe permitir la IP desde la que se conecta.
+- El esquema lo crea **Flyway** al arrancar con los scripts `aplicacion/src/main/resources/db/migration/V<n>__*.sql`
+  (tarea B-03, a partir de `context/24.dis.estructura.datos.v01.md`). Hibernate solo **valida** el esquema
+  (`ddl-auto: validate`); no crea tablas.
+- Las pruebas excluyen por ahora el `DataSource`, JPA y Flyway (`aplicacion/src/test/resources/config/application.yml`);
+  las pruebas contra la base de datos están pendientes (P-08).
 
 ## Comandos
 
@@ -25,7 +54,7 @@ Desde la carpeta `backend/` (en Windows, `mvnw.cmd` en lugar de `./mvnw`):
 | Ejecutar el jar | `java -jar aplicacion/target/paqrap-backend.jar` |
 | Ejecutar con Maven | `./mvnw -q -DskipTests install` (una vez) y luego `./mvnw -pl aplicacion spring-boot:run` |
 
-El servidor escucha en `http://localhost:8080`. Verificación:
+El servidor escucha en `http://localhost:8080` (requiere `backend/.env`). Verificación:
 
 ```bash
 curl http://localhost:8080/api/salud
@@ -99,10 +128,21 @@ Los paquetes `simulacion` y `persistencia` solo tienen un `package-info.java` qu
 
 ### Dependencias
 
-Solo `spring-boot-starter-web`, `spring-boot-starter-validation` y `spring-boot-starter-test` en `aplicacion`, y
-`junit-jupiter` (pruebas) en `planificador`. Las versiones las gestiona Spring Boot 4.1.1 (Spring Framework 7.0.9,
-Tomcat 11.0.24, JUnit Jupiter 6.0.3, AssertJ 3.27.7). Las decisiones de base de datos, migraciones, WebSocket/STOMP
-y otras librerías siguen pendientes.
+Decididas en D-02 (`TAREAS.md`). Las versiones las gestiona Spring Boot 4.1.1 (Spring Framework 7.0.9, Tomcat
+11.0.24, Flyway 12.4.0, driver PostgreSQL 42.7.13, JUnit Jupiter 6.0.3, AssertJ 3.27.7).
+
+| Módulo | Dependencia | Uso |
+|---|---|---|
+| aplicacion | `spring-boot-starter-webmvc` | REST bajo `/api` (reemplaza a `spring-boot-starter-web`, obsoleto en Boot 4) |
+| aplicacion | `spring-boot-starter-validation` | Validación de cuerpos y propiedades |
+| aplicacion | `spring-boot-starter-websocket` | STOMP en `/ws`: `SimSnapshot` y `LogEvent` (B-09) |
+| aplicacion | `spring-boot-starter-data-jpa` | Entidades y repositorios sobre PostgreSQL (Hibernate) |
+| aplicacion | `spring-boot-starter-flyway` + `flyway-database-postgresql` | Migraciones versionadas del esquema |
+| aplicacion | `org.postgresql:postgresql` (runtime) | Driver JDBC |
+| aplicacion | `spring-boot-starter-test`, `spring-boot-starter-webmvc-test` (test) | JUnit, AssertJ, MockMvc, `@WebMvcTest` |
+| planificador | `junit-jupiter` (test) | Pruebas del planificador |
+
+Cualquier otra librería se consulta antes de agregarla.
 
 ## Pruebas
 

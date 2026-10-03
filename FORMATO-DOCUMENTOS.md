@@ -92,7 +92,7 @@ Cargar la skill `anthropic-skills:docx`. Para que el formato quede consistente y
 ## 6. Pendientes conocidos
 
 - El **índice es texto fijo**, no un campo de Word. Sus números de página se actualizaron con la paginación de LibreOffice
-  (documento de 76 páginas tras aplicar el formato completo); al cerrar cada versión hay que revisarlos en Word, porque
+  (documento de 73 páginas en LibreOffice tras la regeneración del 02/10/2026); al cerrar cada versión hay que revisarlos en Word, porque
   LibreOffice y Word pueden diferir en una página (o convertirlo a tabla de contenido automática si el equipo lo aprueba).
 - La justificación en columnas estrechas deja huecos entre palabras; es consecuencia de la regla «todo justificado» y se aceptó.
 - Todo documento nuevo o editado debe cerrar con la verificación de la sección 5 (puntos 5 y 6).
