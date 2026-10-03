@@ -35,7 +35,10 @@ F0 ──► F3a Backend base ─┼──► F3c Simulación ────┼─
 - F3b, F3c y F3d esperan el modelo de datos **aprobado** (F1).
 - F2 y F3 corren en paralelo sobre el mismo `context/24.dis.estructura.datos.v01.md` (antes
   `docs/estructura-datos/modelo-datos.md`): el `.docx` no se edita a mano por separado.
-- D-01, D-02, D-04 y M-05 están cerradas: B-03 (migraciones) puede empezar. Agentes en uso: **redactor** y **auditor**.
+- D-01, D-02, D-04 y M-05 están cerradas y la conexión al RDS está verificada (02/10/2026): **B-03 es la siguiente
+  tarea**. Agentes en uso: **redactor** y **auditor**; el agente `backend` se lanza para B-03.
+- **Corte vertical para la semana 08** (acordado el 02/10/2026): B-03 → B-04 → B-05 → B-07 (resumen) → B-08/B-09 →
+  I-01/I-02, con el escenario 5D. B-06 (incidencias por tipo, trasvase) y el escenario Colapso completo van después.
 
 ## 3. Tareas
 
@@ -50,6 +53,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | D-03 | Planificador: **módulo Maven en este repo con núcleo común + Tabu Search** (TS es el algoritmo seleccionado; ALNS queda fuera) | ✅ |
 | D-04 | Discrepancias de `CLAUDE.md` §8 que afectan datos → resueltas en DD-01..DD-31 | ✅ |
 | D-05 | `.docx` con formato similar a los demás documentos del curso; prioridad al contenido | ✅ |
+| D-06 | Tablas de seguridad `seg_usuario`, `seg_rol`, `seg_usuario_rol` (opcionales, DD-30): incluirlas en `V1__esquema.sql` o dejarlas para una migración posterior | ⬜ |
 
 ### F1 — Modelo de datos (redactor; el orquestador revisa y el usuario aprueba)
 
@@ -76,7 +80,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 |---|---|---|---|---|
 | B-01 | back-base | Proyecto `backend/` Spring Boot 4.1.1 + Maven (wrapper) + Java 25, sin BD ni WebSocket todavía | — | ✅ |
 | B-02 | back-base | Módulo `planificador` (núcleo común + TS) con sus pruebas en JUnit en verde (41 pruebas) | D-03 | ✅ |
-| B-03 | back-datos | Migraciones con el DDL del modelo aprobado | M-05 | ⬜ |
+| B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (44 tablas) y `V2__datos_iniciales.sql` (catálogos §7). Revisión del SQL por el usuario antes de aplicarlo al RDS | M-05, D-06 | ⬜ **siguiente** |
 | B-04 | back-datos | Carga de ventas, bloqueos, mantenimiento y averías a la BD (ids deterministas) | B-03 | ⬜ |
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ⬜ |
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ⬜ |

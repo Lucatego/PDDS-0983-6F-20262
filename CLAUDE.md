@@ -252,12 +252,34 @@ Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webm
   Spring Data JPA, Flyway (+ `flyway-database-postgresql`), driver PostgreSQL; pruebas con `starter-test` y
   `starter-webmvc-test`. BD en AWS con credenciales en `backend/.env` (plantilla `.env.example`); contenedor local
   y pruebas contra la BD pendientes (P-07, P-08).
+Paso 1e ✅ Conexión a PostgreSQL en AWS (RDS, PostgreSQL 18.3, base `paqrap`) verificada por el usuario el
+  02/10/2026: el backend arranca contra la BD. Cada IP que se conecte necesita una regla de entrada en el
+  security group del RDS (puerto 5432).
+
+**Estrategia acordada (02/10/2026): corte vertical primero.** Para la semana 08 (`sol.integrada.sem08`) se
+prioriza un flujo completo y demostrable antes que la cobertura total de las LE:
+archivos cargados en la BD → simulación 5D con reloj, ciclo Sa y Tabu Search → snapshot por STOMP → mapa del
+front con vehículos y pedidos reales → resumen de la ejecución. Después se suman averías por tipo, trasvase,
+colapso, indicadores completos, seguridad y cierre. Estimación del avance global al 02/10/2026: ~35–40 %
+(diseño ~90 %, planificador ~65 %, BD ~15 %, backend ~10 %, front ~70 % con motor local, integración 0 %).
+
+Definición de «sistema al 100 %»: LE001–LE100 y RNF01–08 implementadas y demostrables (o justificadas); los
+3 escenarios de punta a punta con el backend real; reglas del Q&A cumplidas; lo que pide la Guía (BD, carga
+previa e independiente por escenario, resultados exportables, última planificación en el reporte); corre en el
+laboratorio sin servicios externos, multi-dispositivo, reproducible, con pruebas y documentación concordante.
+
 Pasos siguientes (confirmar cada uno con el usuario; detalle y dependencias en `TAREAS.md` §3):
-2. B-03 Migraciones Flyway con el DDL del modelo aprobado y B-04 carga de archivos a la BD.
-3. B-05 a B-07 Simulación: reloj, escenarios, ciclo Sa, incidencias, bitácora e indicadores.
-4. B-08 y B-09 API REST y difusión STOMP según el contrato del front.
-5. I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
-Pendientes abiertos con el usuario: P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md` §4).
+2. **B-03 (siguiente)**: `V1__esquema.sql` (44 tablas, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
+   (catálogos de §7) con Flyway; agente `backend` en `feature/backend-persistencia`. El SQL lo revisa el usuario
+   **antes** de aplicarlo al RDS compartido (una migración aplicada no se edita: las correcciones van en V3+).
+   Decisión pendiente D-06: incluir o no las tablas `seg_*` (DD-30) en V1.
+3. B-04 carga de archivos a la BD.
+4. B-05 reloj y escenarios (portar `SimulacionComparada`), luego B-07 resumen; B-06 incidencias después del corte.
+5. B-08 y B-09 API REST y difusión STOMP según el contrato del front.
+6. I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
+Huecos del planificador a decidir en B-06: tipos de avería, trasvase, traslado al central, `rutasEnCurso` sin
+uso y un solo viaje por vehículo y ciclo (modificar el núcleo o compensar en el backend).
+Pendientes abiertos con el usuario: D-06, P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
 solución integrada `sol.integrada.sem08`.
