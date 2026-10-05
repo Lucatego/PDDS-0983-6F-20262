@@ -1,7 +1,7 @@
 /**
- * Acceso a datos (tareas B-03 y B-04, pendientes de la decisión de SGBD y de frameworks, D-01 y D-02).
+ * Persistencia PostgreSQL mediante JPA y carga de archivos (B-03/B-04).
  *
- * <p>Aquí vivirán las entidades, los repositorios y la carga de los archivos de ventas, bloqueos, mantenimiento y
- * averías a la base de datos con identificadores deterministas (LE008, LE009), según el modelo de datos aprobado.
+ * <p>La carga conserva identificadores deterministas (LE008/009), registra errores por linea (LE011)
+ * y usa una transaccion por archivo. Las migraciones requieren activacion explicita tras revisar el SQL.
  */
 package pe.pucp.paqrap.backend.persistencia;

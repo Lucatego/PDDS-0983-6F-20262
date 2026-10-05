@@ -5,8 +5,8 @@ con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo se
 biblioteca Java pura.
 
 Estado: base del backend (tareas B-01 y B-02 de `TAREAS.md`) con las librerías decididas (D-02) y la conexión a
-PostgreSQL (D-01). Todavía no hay esquema (migraciones, B-03), WebSocket configurado ni los endpoints del contrato
-del frontend.
+PostgreSQL (D-01). B-03/B-04 incorporan las migraciones y el servicio de carga de archivos; la aplicación al RDS
+requiere revisión previa. WebSocket y los endpoints del contrato del frontend siguen pendientes.
 
 ## Requisitos
 
@@ -30,13 +30,14 @@ cp .env.example .env    # desde backend/, y completar los tres valores
 | `PAQRAP_DB_URL` | `jdbc:postgresql://<host>:5432/<base>?sslmode=require` (RDS exige SSL) |
 | `PAQRAP_DB_USUARIO` | Usuario de la base |
 | `PAQRAP_DB_CLAVE` | Contraseña |
+| `PAQRAP_MIGRACIONES_HABILITADAS` | `false` por defecto; establecer `true` solo tras revisar el SQL |
 
 - `application.yml` importa el `.env` con `spring.config.import` desde el directorio de trabajo o su superior, así
   que funciona con `java -jar` desde `backend/` y con `spring-boot:run` (que corre en `backend/aplicacion`). Una
   variable de entorno del sistema con el mismo nombre tiene prioridad sobre el `.env`.
 - Sin credenciales la aplicación **no arranca** (error `'url' must start with "jdbc"` al crear el `dataSource`).
   El *security group* de RDS debe permitir la IP desde la que se conecta.
-- El esquema lo crea **Flyway** al arrancar con los scripts `aplicacion/src/main/resources/db/migration/V<n>__*.sql`
+- El esquema lo crea **Flyway**, cuando se habilita explícitamente, con `aplicacion/src/main/resources/db/migration/V<n>__*.sql`
   (tarea B-03, a partir de `context/24.dis.estructura.datos.v01.md`). Hibernate solo **valida** el esquema
   (`ddl-auto: validate`); no crea tablas.
 - Las pruebas excluyen por ahora el `DataSource`, JPA y Flyway (`aplicacion/src/test/resources/config/application.yml`);
@@ -97,10 +98,47 @@ backend/
         ├── api                  SaludControlador (GET /api/salud), ManejadorErrores, RespuestaError
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
         ├── simulacion           (vacío: reloj, escenarios y ciclos Sa; tareas B-05 a B-07)
-        └── persistencia         (vacío: entidades, repositorios y carga de archivos; tareas B-03 y B-04)
+        └── persistencia         ArchivoCarga, RepositorioCarga, AnalizadorArchivo y ServicioCargaArchivos
 ```
 
-Los paquetes `simulacion` y `persistencia` solo tienen un `package-info.java` que describe lo que contendrán.
+El paquete `simulacion` todavía solo tiene `package-info.java`.
+
+### Migraciones y carga de archivos (B-03/B-04)
+
+- V1 crea las 41 tablas funcionales, FK, restricciones e índices del modelo v1.0.1. Seguridad queda postergada
+  (D-06): no hay tablas `seg_*`; `registrado_por` es nullable y sin FK. V2 carga catálogos y 31 parámetros.
+- `ServicioCargaArchivos.cargar(tipo, nombre, contenido, ejecucionId)` es el punto de entrada para B-08.
+  Ventas, bloqueos y mantenimiento son maestros (`ejecucionId = null`). Averías requiere una ejecución
+  `CONFIGURADA` y su flota ya creada; se registran como incidencias `PROGRAMADA`, con fecha relativa al inicio.
+- Se aceptan los nombres oficiales y reales de ventas/bloqueos, BOM, comentarios y líneas vacías. Los códigos
+  usan la línea física. Errores por línea no impiden cargar las válidas; fallas de persistencia revierten todo.
+  Un nombre/periodo inválido se rechaza antes de crear la auditoría (no existe un periodo válido para registrarla).
+- El SHA-256 corresponde al contenido UTF-8 recibido. Recargarlo en el mismo periodo o ejecución devuelve el
+  mismo archivo y sus identificadores. Un contenido diferente para un periodo ocupado se rechaza; el reemplazo
+  explícito de archivos y su autorización según uso por ejecuciones quedan fuera de esta operación.
+- Mantenimiento se repite cada dos meses hasta 31/12/2029, siempre desde la fecha original. Si el día no existe
+  en el mes destino, se usa el último día del mes (`LocalDate.plusMonths`). El índice fecha/unidad evita duplicados.
+- No hay endpoints nuevos, simulador ni autenticación en este bloque. El mapeo JPA incluye `ArchivoCarga`;
+  los registros de carga se insertan con SQL parametrizado mediante JPA. Los demás agregados se mapearán según
+  los servicios de simulación que los necesiten.
+
+Pruebas PostgreSQL optativas, sin librerías nuevas: `CargaPostgresqlTest` acepta únicamente una instancia
+local desechable en `127.0.0.1:55483`, usuario `paqrap_prueba`, base `postgres`, sin contraseña. Crea un esquema
+aleatorio propio, aplica Flyway y revierte los datos de cada prueba; nunca utiliza el `.env` ni RDS. El esquema
+se conserva para diagnóstico y se desecha junto con la instancia. En PowerShell, desde `backend/`:
+
+```powershell
+$env:PAQRAP_PRUEBA_DB_URL = 'jdbc:postgresql://127.0.0.1:55483/postgres'
+.\mvnw.cmd test
+```
+
+Sin esa variable, las pruebas PostgreSQL se omiten; las unitarias y las existentes se ejecutan sin BD.
+Esta verificación local no sustituye P-08 (estrategia automatizada de BD/CI) ni acredita los 10 segundos de
+carga de LE003/009 en RDS: ese rendimiento debe medirse con archivos reales y la latencia del entorno.
+
+Verificación del 04/10/2026: 55 pruebas aprobadas y 1 opcional del planificador omitida (dataset externo no
+disponible); incluye 8 de integración con PostgreSQL 18.4 y Flyway. Por disponibilidad local se usó Java 21
+con `-Dmaven.compiler.release=21`; el POM sigue en Java 25 y falta repetir la verificación con ese JDK.
 
 ### Aplicación
 

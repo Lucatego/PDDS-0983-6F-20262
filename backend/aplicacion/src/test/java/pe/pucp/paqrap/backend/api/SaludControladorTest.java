@@ -17,6 +17,9 @@ import org.springframework.web.client.RestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SaludControladorTest {
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.pucp.paqrap.backend.persistencia.RepositorioCarga repositorioCarga;
+
     @LocalServerPort
     private int puerto;
 

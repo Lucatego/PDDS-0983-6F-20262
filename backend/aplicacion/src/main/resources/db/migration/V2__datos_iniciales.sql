@@ -1,0 +1,125 @@
+-- Catalogos y parametros aprobados: modelo v1.0.1, seccion 7.
+INSERT INTO cat_escenario VALUES
+('DIA_A_DIA','diaria','Operacion dia a dia','Dia a dia','Operacion en tiempo real',NULL,TRUE,0.0167,FALSE,FALSE,1),
+('SIMULACION_5D','5d','Simulacion 5 dias','5 dias','Cinco dias simulados',5,FALSE,4.0,TRUE,FALSE,2),
+('COLAPSO','colapso','Hasta el colapso','Colapso','Simulacion hasta el primer colapso',NULL,FALSE,4.0,TRUE,TRUE,3);
+INSERT INTO cat_modalidad_entrega VALUES
+(36,'REGULAR','Regular (36 h)',1,TRUE),(4,'PRIORIZADA','Priorizada (4 h)',2,TRUE),
+(8,'PRIORIZADA','Priorizada (8 h)',3,TRUE),(12,'PRIORIZADA','Priorizada (12 h)',4,TRUE),
+(18,'PRIORIZADA','Priorizada (18 h)',5,TRUE);
+INSERT INTO cat_tipo_vehiculo VALUES
+('TA','auto','Auto','Autos',24,40,8,10,1),
+('TM','moto','Moto','Motos',8,25,6,15,2),
+('TB','bici','Bicicleta','Bicicletas',4,12,3,12,3);
+INSERT INTO cat_tipo_averia VALUES
+(1,'Menor','Inoperativa durante 2 horas','DURACION_FIJA',120,120,FALSE,NULL,NULL,1),
+(2,'Intermedia','Hasta el fin del turno siguiente; traslado al central tras 4 horas',
+ 'FIN_TURNO_SIGUIENTE',NULL,240,TRUE,NULL,NULL,1),
+(3,'Mayor','Primer turno de 15:00 al menos 2 dias despues; traslado tras 4 horas',
+ 'DIAS_Y_TURNO',NULL,240,TRUE,2,900,1);
+INSERT INTO almacen VALUES
+('CENTRAL','central','Almacen Central','Central','CENTRAL',27,14,TRUE,NULL,TRUE,TRUE,CURRENT_TIMESTAMP),
+('NOROESTE','noroeste','Almacen Nor-Oeste','Nor-Oeste','INTERMEDIO',12,38,FALSE,1000,FALSE,TRUE,CURRENT_TIMESTAMP),
+('ESTE','este','Almacen Este','Este','INTERMEDIO',57,27,FALSE,1000,FALSE,TRUE,CURRENT_TIMESTAMP);
+INSERT INTO cat_estado_pedido VALUES
+('REGISTRADO','Registrado (pendiente)','registrado',FALSE,'NEUTRO',1),
+('PLANIFICADO','Planificado (sin despachar)','registrado',FALSE,'INFORMATIVO',2),
+('REPROGRAMADO','Reprogramado (reasignado)','reprogramado',FALSE,'ADVERTENCIA',3),
+('EN_RUTA','En ruta','en ruta',FALSE,'INFORMATIVO',4),
+('ENTREGADO','Entregado','entregado',TRUE,'EXITO',5),
+('NO_CUMPLIDO','No cumplido','no cumplido',TRUE,'CRITICO',6),
+('ANULADO','Anulado','anulado (nuevo)',TRUE,'NEUTRO',7);
+INSERT INTO cat_estado_vehiculo VALUES
+('DISPONIBLE','Disponible','idle',TRUE,FALSE,'INFORMATIVO'),
+('EN_REFRIGERIO','Refrigerio','break',FALSE,FALSE,'INFORMATIVO'),
+('EN_RUTA','En ruta al cliente','toClient',TRUE,TRUE,'INFORMATIVO'),
+('ENTREGANDO','Entregando','atClient',TRUE,TRUE,'INFORMATIVO'),
+('RETORNANDO','Retornando','returning',TRUE,TRUE,'INFORMATIVO'),
+('AVERIADO','Averiada','broken',FALSE,TRUE,'INFORMATIVO'),
+('EN_MANTENIMIENTO','Mantenimiento','maintenance',FALSE,FALSE,'INFORMATIVO');
+INSERT INTO cat_estado_ejecucion VALUES
+('CONFIGURADA','Configurada',TRUE,FALSE),
+('ESPERANDO_PEDIDO','Esperando el primer pedido (Día a día)',TRUE,FALSE),
+('EN_CURSO','En curso',TRUE,FALSE),
+('PAUSADA','Pausada',TRUE,FALSE),
+('FINALIZADA','Finalizada',FALSE,TRUE),
+('COLAPSADA','Colapsada',FALSE,TRUE),
+('DETENIDA','Detenida por el usuario',FALSE,TRUE),
+('ERROR','Terminada con error',FALSE,TRUE);
+INSERT INTO cat_motivo_fin VALUES
+('FIN_DE_DATOS','Se atendió toda la demanda disponible y la flota retornó.',FALSE,FALSE),
+('FIN_DE_HORIZONTE','Se cumplió la duración configurada (5 días en 5D).',FALSE,FALSE),
+('LIMITE_DE_CICLOS','Se alcanzó el máximo de ciclos configurado.',FALSE,FALSE),
+('COLAPSO_PLANIFICACION','Un ciclo no obtuvo un plan completo: al menos un pedido no puede cumplirse (LE021).',TRUE,FALSE),
+('COLAPSO_PLAZO','Un pedido venció sin completarse (detección por reloj, LE005).',TRUE,FALSE),
+('DETENIDA_POR_USUARIO','El usuario detuvo o reinició la ejecución (LE060).',FALSE,FALSE),
+('ERROR','Error interno del servidor o del planificador.',FALSE,TRUE);
+INSERT INTO cat_tipo_evento (codigo,categoria,nivel_defecto,descripcion,genera_alerta) VALUES
+('EJECUCION_CONFIGURADA','EJECUCION','INFORMATIVO','ejecucion configurada',FALSE),
+('EJECUCION_INICIADA','EJECUCION','EXITO','ejecucion iniciada',FALSE),
+('EJECUCION_PAUSADA','EJECUCION','ADVERTENCIA','ejecucion pausada',FALSE),
+('EJECUCION_REANUDADA','EJECUCION','EXITO','ejecucion reanudada',FALSE),
+('EJECUCION_FINALIZADA','EJECUCION','EXITO','ejecucion finalizada',TRUE),
+('EJECUCION_DETENIDA','EJECUCION','ADVERTENCIA','ejecucion detenida',TRUE),
+('COLAPSO','EJECUCION','CRITICO','colapso',TRUE),
+('ARCHIVO_CARGADO','CARGA','INFORMATIVO','archivo cargado',FALSE),
+('ARCHIVO_RECHAZADO','CARGA','ADVERTENCIA','archivo rechazado',TRUE),
+('PEDIDO_REGISTRADO','PEDIDO','INFORMATIVO','pedido registrado',FALSE),
+('PEDIDO_RECHAZADO','PEDIDO','ADVERTENCIA','pedido rechazado',FALSE),
+('PEDIDO_EN_RIESGO','PEDIDO','ADVERTENCIA','pedido en riesgo',TRUE),
+('LOTE_PROCESADO','PEDIDO','INFORMATIVO','lote procesado',FALSE),
+('PEDIDO_ENTREGA_PARCIAL','PEDIDO','INFORMATIVO','pedido entrega parcial',FALSE),
+('PEDIDO_ENTREGADO','PEDIDO','EXITO','pedido entregado',FALSE),
+('PEDIDO_NO_CUMPLIDO','PEDIDO','CRITICO','pedido no cumplido',TRUE),
+('CICLO_PLANIFICADO','PLANIFICACION','INFORMATIVO','ciclo planificado',FALSE),
+('RUTA_DESPACHADA','PLANIFICACION','INFORMATIVO','ruta despachada',FALSE),
+('RUTA_RECALCULADA','PLANIFICACION','ADVERTENCIA','ruta recalculada',FALSE),
+('PEDIDO_REPROGRAMADO','PLANIFICACION','ADVERTENCIA','pedido reprogramado',FALSE),
+('REASIGNACION','PLANIFICACION','ADVERTENCIA','reasignacion',FALSE),
+('RECARGA_ALMACEN','INVENTARIO','INFORMATIVO','recarga almacen',FALSE),
+('ALERTA_STOCK_BAJO','INVENTARIO','ADVERTENCIA','alerta stock bajo',TRUE),
+('BLOQUEO_ACTIVADO','INCIDENCIA','ADVERTENCIA','bloqueo activado',TRUE),
+('BLOQUEO_REGISTRADO','INCIDENCIA','ADVERTENCIA','bloqueo registrado',TRUE),
+('BLOQUEO_CONSOLIDADO','INCIDENCIA','INFORMATIVO','bloqueo consolidado',FALSE),
+('BLOQUEO_FINALIZADO','INCIDENCIA','EXITO','bloqueo finalizado',FALSE),
+('AVERIA_REGISTRADA','INCIDENCIA','CRITICO','averia registrada',TRUE),
+('AVERIA_TRASLADO_CENTRAL','INCIDENCIA','ADVERTENCIA','averia traslado central',FALSE),
+('AVERIA_RESUELTA','INCIDENCIA','EXITO','averia resuelta',FALSE),
+('INCIDENCIA_DESCARTADA','INCIDENCIA','ADVERTENCIA','incidencia descartada',FALSE),
+('MANTENIMIENTO_INICIADO','FLOTA','INFORMATIVO','mantenimiento iniciado',FALSE),
+('MANTENIMIENTO_FINALIZADO','FLOTA','EXITO','mantenimiento finalizado',FALSE),
+('VEHICULO_RETORNO','FLOTA','INFORMATIVO','vehiculo retorno',FALSE),
+('CAMBIO_VELOCIDAD','PARAMETRO','INFORMATIVO','cambio velocidad',FALSE);
+INSERT INTO parametro_sistema VALUES
+('MAPA_ANCHO_KM','70','ENTERO','km','mapa ancho km','LE037, Q&A 4',CURRENT_TIMESTAMP),
+('MAPA_ALTO_KM','50','ENTERO','km','mapa alto km','LE037, Q&A 4',CURRENT_TIMESTAMP),
+('SA_MINUTOS','10','ENTERO','min','sa minutos','LE026, DD-12',CURRENT_TIMESTAMP),
+('SC_MINUTOS','0','ENTERO','min','sc minutos','Guía 8',CURRENT_TIMESTAMP),
+('SERVICIO_MINUTOS','60','ENTERO','min','servicio minutos','LE016, LE023, Q&A 14',CURRENT_TIMESTAMP),
+('PLAZO_INCLUYE_SERVICIO','false','BOOLEANO',NULL,'plazo incluye servicio','Q&A 11, DD-04',CURRENT_TIMESTAMP),
+('TURNO_MINUTOS','480','ENTERO','min','turno minutos','LE017',CURRENT_TIMESTAMP),
+('TURNO_INICIOS','07:00,15:00,23:00','TEXTO',NULL,'turno inicios','LE069',CURRENT_TIMESTAMP),
+('DESCANSO_DESDE_MIN','60','ENTERO','min','descanso desde min','LE018, DD-13',CURRENT_TIMESTAMP),
+('DESCANSO_HASTA_MIN','420','ENTERO','min','descanso hasta min','LE018, DD-13',CURRENT_TIMESTAMP),
+('DESCANSO_MINUTOS','60','ENTERO','min','descanso minutos','LE018',CURRENT_TIMESTAMP),
+('TAMANIO_PARTE','4','ENTERO','paquetes','tamanio parte','Q&A 13',CURRENT_TIMESTAMP),
+('COSTO_FIJO_VEHICULO','50','DECIMAL','S/','costo fijo vehiculo','IEN',CURRENT_TIMESTAMP),
+('PENALIZACION_PAQUETE_PENDIENTE','1000000','DECIMAL',NULL,'penalizacion paquete pendiente','IEN',CURRENT_TIMESTAMP),
+('CAPACIDAD_ALMACEN_INTERMEDIO','1000','ENTERO','paquetes','capacidad almacen intermedio','LE031',CURRENT_TIMESTAMP),
+('STOCK_INICIAL_PCT','100','DECIMAL','%','stock inicial pct','DD-15',CURRENT_TIMESTAMP),
+('HORA_RECARGA','23:59:59','HORA',NULL,'hora recarga','LE033',CURRENT_TIMESTAMP),
+('SEMAFORO_VERDE_MIN_PCT','70','DECIMAL','%','semaforo verde min pct','LE028, RNF04',CURRENT_TIMESTAMP),
+('SEMAFORO_AMBAR_MIN_PCT','35','DECIMAL','%','semaforo ambar min pct','LE028, RNF04',CURRENT_TIMESTAMP),
+('ALERTA_STOCK_PCT','20','DECIMAL','%','alerta stock pct','LE036',CURRENT_TIMESTAMP),
+('ALGORITMO','TS','TEXTO',NULL,'algoritmo','IEN (TS seleccionado)',CURRENT_TIMESTAMP),
+('TS_MAX_ITERACIONES','300','ENTERO',NULL,'ts max iteraciones','IEN',CURRENT_TIMESTAMP),
+('TS_TENENCIA','7','ENTERO',NULL,'ts tenencia','IEN',CURRENT_TIMESTAMP),
+('TS_SIN_MEJORA_MAX','30','ENTERO',NULL,'ts sin mejora max','IEN',CURRENT_TIMESTAMP),
+('TS_CANDIDATOS','400','ENTERO',NULL,'ts candidatos','IEN',CURRENT_TIMESTAMP),
+('PRESUPUESTO_MS','0','ENTERO','ms','presupuesto ms','DA-07',CURRENT_TIMESTAMP),
+('SEMILLA','20262','ENTERO',NULL,'semilla','IEN',CURRENT_TIMESTAMP),
+('ACELERACION_5D','4.0','DECIMAL','min sim./s','aceleracion 5d','LE058, DD-26',CURRENT_TIMESTAMP),
+('TASA_AVERIAS_DIA','0','DECIMAL','averías/día','tasa averias dia','LE078',CURRENT_TIMESTAMP),
+('TRASVASE_HABILITADO','false','BOOLEANO',NULL,'trasvase habilitado','DD-06',CURRENT_TIMESTAMP),
+('TRASVASE_MINUTOS','30','ENTERO','min','trasvase minutos','DD-06',CURRENT_TIMESTAMP);
+

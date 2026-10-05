@@ -16,6 +16,9 @@ import pe.pucp.paqrap.tabu.TabuSearchPlanner;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class PaqRapAplicacionTest {
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.pucp.paqrap.backend.persistencia.RepositorioCarga repositorioCarga;
+
     @Autowired
     private ConfiguracionTabu configuracionTabu;
 

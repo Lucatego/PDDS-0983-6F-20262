@@ -53,7 +53,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | D-03 | Planificador: **módulo Maven en este repo con núcleo común + Tabu Search** (TS es el algoritmo seleccionado; ALNS queda fuera) | ✅ |
 | D-04 | Discrepancias de `CLAUDE.md` §8 que afectan datos → resueltas en DD-01..DD-31 | ✅ |
 | D-05 | `.docx` con formato similar a los demás documentos del curso; prioridad al contenido | ✅ |
-| D-06 | Tablas de seguridad `seg_usuario`, `seg_rol`, `seg_usuario_rol` (opcionales, DD-30): incluirlas en `V1__esquema.sql` o dejarlas para una migración posterior | ⬜ |
+| D-06 | Seguridad postergada por el usuario (04/10/2026). V1 omite `seg_usuario`, `seg_rol`, `seg_usuario_rol`; `registrado_por` queda nullable y sin FK conforme a DD-30. Retomar en otra migración; no bloquea B-03 | ⬜ postergada |
 
 ### F1 — Modelo de datos (redactor; el orquestador revisa y el usuario aprueba)
 
@@ -80,8 +80,8 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 |---|---|---|---|---|
 | B-01 | back-base | Proyecto `backend/` Spring Boot 4.1.1 + Maven (wrapper) + Java 25, sin BD ni WebSocket todavía | — | ✅ |
 | B-02 | back-base | Módulo `planificador` (núcleo común + TS) con sus pruebas en JUnit en verde (41 pruebas) | D-03 | ✅ |
-| B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (44 tablas) y `V2__datos_iniciales.sql` (catálogos §7). Revisión del SQL por el usuario antes de aplicarlo al RDS | M-05, D-06 | ⬜ **siguiente** |
-| B-04 | back-datos | Carga de ventas, bloqueos, mantenimiento y averías a la BD (ids deterministas) | B-03 | ⬜ |
+| B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (41 tablas; seguridad postergada) y `V2__datos_iniciales.sql` (catálogos §7). Verificadas con Flyway en PostgreSQL 18.4 local; activación explícita y revisión antes del RDS | M-05 | 🔄 validado localmente; pendiente revisión/aplicación al RDS |
+| B-04 | back-datos | Servicio JPA de carga de ventas, bloqueos, mantenimiento y averías; códigos por línea, reintentos idempotentes y errores por línea. Pruebas locales en verde. API queda en B-08; rendimiento con archivos reales en RDS por medir | B-03 | 🔄 implementado y probado localmente; validación en entorno objetivo pendiente |
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ⬜ |
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ⬜ |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ⬜ |
@@ -96,6 +96,11 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | I-02 | Prueba de punta a punta con `VITE_DATA_SOURCE=server` | ⬜ |
 
 ## 4. Pendientes para revisar con el usuario
+
+Verificación del 04/10/2026 en `feature/backend-persistencia`: 55 pruebas aprobadas y 1 prueba opcional del
+planificador omitida por falta del dataset externo; incluye 7 pruebas del analizador y 8 de PostgreSQL/Flyway.
+Se ejecutó con Java 21 y `-Dmaven.compiler.release=21` por disponibilidad local; el proyecto conserva Java 25.
+Falta repetir con el JDK 25 del proyecto. No se modificó el RDS ni se incorporaron librerías nuevas.
 
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|
