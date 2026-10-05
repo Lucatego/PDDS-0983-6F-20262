@@ -184,6 +184,12 @@ Cualquier otra librería se consulta antes de agregarla.
 
 ## Pruebas
 
+B-05 en desarrollo: `MotorSimulacion` contiene el reloj determinista y los ciclos Sa, con rutas
+comprometidas y partes estables. `RepositorioConfiguracionEjecucion` congela parámetros, semilla,
+flota, turnos, velocidades y stock inicial en una transacción. Sus pruebas usan exclusivamente
+PostgreSQL local optativo; la verificación del RDS corresponde al usuario. Pendientes: conectar
+la orquestación, persistir ciclos/rutas y exponer los controles REST/STOMP (no disponibles todavía).
+
 | Módulo | Clase | Qué cubre |
 |---|---|---|
 | planificador | `RestriccionesTabuTest` | Lista tabú y aspiración, división de pedidos, plazo, turnos, refrigerio, mantenimiento, avería, stock, bloqueos, integridad, vecindarios, replanificación con rutas en curso, reproducibilidad, iteración de la mejor solución, validación de entrada |

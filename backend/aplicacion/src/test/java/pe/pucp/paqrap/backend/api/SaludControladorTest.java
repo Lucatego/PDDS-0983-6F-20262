@@ -20,6 +20,9 @@ class SaludControladorTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pe.pucp.paqrap.backend.persistencia.RepositorioCarga repositorioCarga;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.pucp.paqrap.backend.persistencia.RepositorioConfiguracionEjecucion configuracionEjecucion;
+
     @LocalServerPort
     private int puerto;
 

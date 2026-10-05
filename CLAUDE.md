@@ -268,7 +268,7 @@ Definición de «sistema al 100 %»: LE001–LE100 y RNF01–08 implementadas y 
 previa e independiente por escenario, resultados exportables, última planificación en el reporte); corre en el
 laboratorio sin servicios externos, multi-dispositivo, reproducible, con pruebas y documentación concordante.
 
-Pasos siguientes (confirmar cada uno con el usuario; detalle y dependencias en `TAREAS.md` §3):
+Pasos siguientes (avance secuencial autorizado por el usuario el 04/10/2026; detalle en `TAREAS.md` §3):
 2. **B-03 (revisión pendiente)**: `V1__esquema.sql` (41 tablas sin seguridad, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
    (catálogos de §7) con Flyway; agente `backend` en `feature/backend-persistencia`. El SQL lo revisa el usuario
    **antes** de aplicarlo al RDS compartido (una migración aplicada no se edita: las correcciones van en V3+).
@@ -283,6 +283,9 @@ Avance de la rama `feature/backend-persistencia` (04/10/2026): V1/V2 y servicio 
 verificados en PostgreSQL 18.4 local: 55 pruebas aprobadas y 1 opcional omitida, usando Java 21 como comprobación
 de compatibilidad; repetir con Java 25. Flyway requiere `PAQRAP_MIGRACIONES_HABILITADAS=true` tras revisar el SQL.
 El RDS no se ha modificado. API de carga pendiente de B-08; seguridad postergada y sin bloqueo sobre B-03.
+El usuario verificará el RDS manualmente: no acceder a ese entorno. B-05 en curso: motor determinista
+con diez pruebas y configuración persistida con dos pruebas adicionales sobre PostgreSQL local.
+Falta conectar la orquestación y persistir ciclos/rutas antes del resumen y transporte REST/STOMP.
 Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =

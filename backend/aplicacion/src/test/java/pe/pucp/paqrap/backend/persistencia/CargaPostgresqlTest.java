@@ -24,6 +24,7 @@ class CargaPostgresqlTest {
     private static final String ESQUEMA = "prueba_" + UUID.randomUUID().toString().replace("-", "");
     @Autowired private ServicioCargaArchivos servicio;
     @Autowired private EntityManager entidad;
+    @Autowired private RepositorioConfiguracionEjecucion configuracionEjecucion;
 
     @DynamicPropertySource
     static void configurar(DynamicPropertyRegistry registro) {
@@ -33,6 +34,46 @@ class CargaPostgresqlTest {
         registro.add("spring.datasource.password", () -> "");
         registro.add("spring.flyway.schemas", () -> ESQUEMA);
         registro.add("spring.flyway.default-schema", () -> ESQUEMA);
+    }
+
+    @Test
+    void configuracionPersisteFlotaTurnosParametrosYPermiteCargarAverias() {
+        var configuracion = configuracionPrueba();
+        long id = configuracionEjecucion.crear(configuracion,
+                new pe.pucp.paqrap.tabu.ConfiguracionTabu(1, 7, 30, 2, 0, 20262));
+        assertThat(numero("SELECT count(*) FROM vehiculo WHERE ejecucion_id = " + id)).isEqualTo(3);
+        assertThat(numero("SELECT count(*) FROM turno_ejecucion WHERE ejecucion_id = " + id)).isEqualTo(3);
+        assertThat(numero("SELECT count(*) FROM velocidad_historial WHERE ejecucion_id = " + id)).isEqualTo(3);
+        assertThat(numero("SELECT stock_actual FROM almacen_ejecucion WHERE almacen_id = 'ESTE'"))
+                .isEqualTo(180);
+        assertThat(numero("SELECT count(*) FROM configuracion_ejecucion WHERE NOT plazo_incluye_servicio"))
+                .isEqualTo(1);
+        var carga = servicio.cargar(TipoArchivo.AVERIAS, "averias.txt", "01d09h30m:TA01,2", id);
+        assertThat(carga.aceptados()).isEqualTo(1);
+        assertThat(carga.rechazados()).isZero();
+    }
+
+    @Test
+    void configuracionRechazaSegundaEjecucionActiva() {
+        var algoritmo = new pe.pucp.paqrap.tabu.ConfiguracionTabu(1, 7, 30, 2, 0, 20262);
+        configuracionEjecucion.crear(configuracionPrueba(), algoritmo);
+        assertThatThrownBy(() -> configuracionEjecucion.crear(configuracionPrueba(), algoritmo))
+                .isInstanceOf(RepositorioConfiguracionEjecucion.EjecucionActivaException.class)
+                .hasMessageContaining("ejecucion activa");
+        assertThat(numero("SELECT count(*) FROM ejecucion")).isEqualTo(1);
+    }
+
+    private pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion configuracionPrueba() {
+        var parametros = pe.pucp.paqrap.estricto.modelo.ParametrosOperacion.porDefecto();
+        var operacion = new pe.pucp.paqrap.estricto.modelo.ParametrosOperacion(60, false, 480, 420,
+                60, 420, 60, 4, 50, 1000000, parametros.velocidades());
+        return new pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion(
+                pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion.Escenario.SIMULACION_5D,
+                java.time.LocalDateTime.of(2026, 9, 1, 7, 0),
+                java.util.Map.of(pe.pucp.paqrap.estricto.modelo.TipoVehiculo.TA, 1,
+                        pe.pucp.paqrap.estricto.modelo.TipoVehiculo.TM, 2,
+                        pe.pucp.paqrap.estricto.modelo.TipoVehiculo.TB, 0),
+                java.util.Map.of("NOROESTE", 160, "ESTE", 180), 10, 4, 20262, operacion);
     }
 
     @Test
