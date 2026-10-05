@@ -93,7 +93,17 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | Id | Tarea | Estado |
 |---|---|---|
 | I-01 | Ajustes del contrato del frontend (rutas, paradas, partes, estados unificados) | ⬜ |
-| I-02 | Prueba de punta a punta con `VITE_DATA_SOURCE=server` | ⬜ |
+| I-02 | Prueba de punta a punta GUI → Planificador → Visualizador con `VITE_DATA_SOURCE=server`, para día a día, 5D y colapso por separado. Verificar configuración, inicio, pausa/reanudación, rutas, pedidos, reloj y cierre correspondiente; datos recibidos del backend, sin motor local de respaldo. Depende de B-05, B-07, B-08, B-09 e I-01 | ⬜ |
+| I-03 | Prueba multidispositivo y conexión tardía: para cada uno de los tres escenarios, conectar un segundo navegador/dispositivo durante una ejecución y comprobar que recibe el estado vigente y las actualizaciones posteriores, concordantes con el primer cliente, sin reiniciar la ejecución. Depende de I-02 | ⬜ |
+| I-04 | Prueba de desconexión/reconexión del Visualizador: interrumpir la conexión de un cliente y recuperarla; comprobar resincronización con el servidor, sin duplicar eventos, pedidos ni entregas y sin afectar al otro cliente. Repetir por escenario. Depende de I-03 | ⬜ |
+| I-05 | Prueba de humo de la solución desplegada: desde la URL web y un segundo dispositivo, verificar carga de GUI, acceso REST, conexión STOMP y visualización de una ejecución de cada escenario. Registrar URL, versión y resultado. Depende de I-02..I-04 y de disponer de un despliegue accesible; no incluye realizar el despliegue ni verificar el RDS | ⬜ |
+
+Alcance de estas pruebas del entregable: usar casos reproducibles sin averías ni bloqueos durante el
+periodo simulado; B-06 y D-06 no son requisitos para aprobarlas. Registrar caso, resultado esperado,
+resultado obtenido y evidencia por escenario. Probar los tres escenarios no exige ejecutarlos
+simultáneamente: se conserva la restricción actual de una ejecución activa. El primer corte 5D no
+cierra la validación de los otros dos escenarios. Este mapeo agrega solo pruebas de implementación;
+no agrega tareas de elaboración del diagrama ni de ejecución del despliegue.
 
 ## 4. Pendientes para revisar con el usuario
 
