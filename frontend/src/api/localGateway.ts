@@ -61,6 +61,7 @@ export function createLocalGateway(): SimulationGateway {
     start: () => run(() => engine.start()),
     stop: () => run(() => engine.stop()),
     reset: () => run(() => engine.reset()),
+    setSpeed: (factor) => run(() => engine.setSpeed(factor)),
     registerOrder: (input) => run(() => engine.registerOrder(input)),
     registerOrderBatch: (inputs) => run(() => engine.registerOrderBatch(inputs)),
     loadFile: (kind, text) => run(() => engine.loadFile(kind, text)),

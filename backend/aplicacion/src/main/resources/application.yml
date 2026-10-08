@@ -55,3 +55,15 @@ paqrap:
         TA: 40.0
         TM: 25.0
         TB: 12.0
+
+  # Canal en tiempo real hacia el frontend (B-09): STOMP en /ws, SimSnapshot en /topic/simulacion/estado y LogEvent
+  # en /topic/simulacion/eventos.
+  tiempo-real:
+    difusion-habilitada: true
+    reloj-habilitado: true         # el backend hace avanzar el reloj de la simulación con el tiempo real
+    frecuencia-hz: 5               # SimSnapshot por segundo mientras corre (1 a 10; el front sugiere 4 a 10)
+    periodo-sondeo-ms: 50          # cada cuánto se revisa si hay algo que difundir
+    periodo-reloj-ms: 200          # cada cuánto avanza el reloj de la simulación
+    max-salto-reloj-ms: 2000       # tope de tiempo real acreditado en un solo avance
+    minutos-por-segundo-base: 3.0  # velocidad base de 5D y Colapso (min simulados/s real); x1 = 5 días en ~40 min. Día a día: 1/60
+    origenes-permitidos: "*"       # patrones de origen del WebSocket, separados por coma

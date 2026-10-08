@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router';
-import { useRunControl } from '@/api/hooks';
+import { useRunControl, useSetSpeed } from '@/api/hooks';
 import { Icon } from '@/components/ui/Icon';
-import { SCENARIO_SHORT } from '@/domain/constants';
+import { SCENARIO_SHORT, SPEED_FACTORS } from '@/domain/constants';
 import type { Scenario } from '@/domain/types';
 import { useSimStore } from '@/store/simStore';
 import { useUiStore } from '@/store/uiStore';
@@ -32,6 +32,30 @@ function ScenarioSwitcher() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Multiplicador de velocidad (×1, ×2, ×5, ×10) en caliente; solo Simulación 5D y Colapso en curso. */
+function SpeedControl() {
+  const snap = useSimStore((s) => s.snapshot);
+  const setSpeed = useSetSpeed();
+  if (!snap || !snap.configured || snap.scenario === 'diaria' || snap.collapsed || snap.finished) return null;
+  const current = snap.speedFactor ?? 1;
+  return (
+    <div className="segmented" role="group" aria-label="Velocidad de la simulación" title="Velocidad de la simulación">
+      {SPEED_FACTORS.map((f) => (
+        <button
+          key={f}
+          type="button"
+          aria-pressed={current === f}
+          disabled={setSpeed.isPending}
+          onClick={() => current !== f && setSpeed.mutate(f)}
+          aria-label={`Velocidad ×${f}`}
+        >
+          ×{f}
+        </button>
+      ))}
     </div>
   );
 }
@@ -116,6 +140,7 @@ export function Topbar() {
       <div className="mx-auto flex min-w-0 justify-center">
         <SimClock />
       </div>
+      <SpeedControl />
       <RunControls />
       <div className="h-6 w-px bg-line" />
       <button

@@ -1,7 +1,7 @@
 import { gateway } from '@/api/instance';
 import { Icon } from '@/components/ui/Icon';
 import { Badge, PageHeader } from '@/components/ui/primitives';
-import { FALLA_TYPES, SIM_MIN_PER_SEC, VEHICLE_TYPES, VEHICLE_TYPE_KEYS } from '@/domain/constants';
+import { FALLA_TYPES, SIM_BASE_MIN_PER_SEC, SIM_MIN_PER_SEC, SPEED_FACTORS, VEHICLE_TYPES, VEHICLE_TYPE_KEYS } from '@/domain/constants';
 import { DEFAULT_THRESHOLDS, riskLevel } from '@/domain/risk';
 import { useSimStore } from '@/store/simStore';
 import { useUiStore, type Theme } from '@/store/uiStore';
@@ -156,7 +156,7 @@ export function ConfiguracionPage() {
               ['Turnos', '3 turnos de 8 h con refrigerio de 1 h'],
               ['Almacenes intermedios', 'Recarga a capacidad a las 23:59:59'],
               ['Averías', FALLA_TYPES.map((f) => `${f.short} ${f.minMin}–${f.maxMin} min`).join(' · ')],
-              ['Velocidad de simulación', `${SIM_MIN_PER_SEC} min simulados por segundo (modo local)`],
+              ['Velocidad de simulación', `5D y Colapso: ×1 = ${SIM_BASE_MIN_PER_SEC} min simulados por segundo (5 días ≈ ${Math.round((5 * 1440) / SIM_BASE_MIN_PER_SEC / 60)} min reales), ajustable ${SPEED_FACTORS.map((f) => `×${f}`).join(', ')}. Día a día: ${SIM_MIN_PER_SEC} min/s en modo local, tiempo real en el servidor`],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-line pb-2 last:border-0">
                 <dt className="text-ink-3">{k}</dt>

@@ -22,8 +22,9 @@ const cfg = (over: Partial<RunConfig> = {}): RunConfig => ({
 });
 
 function run(engine: SimulationEngine, simMinutes: number) {
-  // 0,25 s reales = 2,5 min simulados por paso
-  for (let i = 0; i < simMinutes / 2.5; i++) engine.tick(0.25);
+  // pasos de 0,25 s reales; los minutos simulados por paso dependen del escenario y la velocidad
+  const stepMin = 0.25 * (engine.snapshot().simMinPerSec ?? 10);
+  for (let i = 0; i < simMinutes / stepMin; i++) engine.tick(0.25);
 }
 
 describe('SimulationEngine', () => {
@@ -96,5 +97,48 @@ describe('SimulationEngine', () => {
     const s = e.snapshot();
     expect(s.finished).toBe(true);
     expect(s.running).toBe(false);
+  });
+  it('en 5D la velocidad base es 3 min simulados por segundo (5 días ≈ 40 min reales)', () => {
+    const e = new SimulationEngine(() => {}, seeded());
+    e.configure(cfg());
+    const s = e.snapshot();
+    expect(s.speedFactor).toBe(1);
+    expect(s.simMinPerSec).toBe(3);
+    const t0 = e.snapshot().simMin;
+    for (let i = 0; i < 40; i++) e.tick(0.25); // 10 s reales
+    expect(e.snapshot().simMin - t0).toBeCloseTo(30, 5);
+  });
+
+  it('setSpeed cambia la velocidad en caliente en 5D y Colapso', () => {
+    for (const scenario of ['5d', 'colapso'] as const) {
+      const e = new SimulationEngine(() => {}, seeded());
+      e.configure(cfg({ scenario }));
+      for (const f of [1, 2, 5, 10]) {
+        e.setSpeed(f);
+        expect(e.snapshot().speedFactor).toBe(f);
+        expect(e.snapshot().simMinPerSec).toBe(3 * f);
+      }
+    }
+  });
+
+  it('setSpeed rechaza factores inválidos, Día a día y el estado sin configurar', () => {
+    const e = new SimulationEngine(() => {}, seeded());
+    expect(() => e.setSpeed(2)).toThrow(/configurada/);
+    e.configure(cfg());
+    expect(() => e.setSpeed(3)).toThrow(/no válida/);
+    e.configure(cfg({ scenario: 'diaria' }));
+    expect(() => e.setSpeed(2)).toThrow(/tiempo real/);
+  });
+
+  it('configurar o reiniciar vuelve la velocidad a ×1', () => {
+    const e = new SimulationEngine(() => {}, seeded());
+    e.configure(cfg());
+    e.setSpeed(10);
+    e.configure(cfg());
+    expect(e.snapshot().speedFactor).toBe(1);
+    e.setSpeed(5);
+    e.reset();
+    e.configure(cfg());
+    expect(e.snapshot().speedFactor).toBe(1);
   });
 });

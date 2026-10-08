@@ -97,11 +97,12 @@ public class RepositorioSimulacion {
     @Transactional
     public long registrarPedidoManual(long ejecucionId, Pedido pedido) {
         long pedidoId = ((Number) consultar("""
-                INSERT INTO pedido (codigo, fecha_registro, destino_x, destino_y, cantidad, plazo_horas, cliente_codigo, origen, fecha_real_registro)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'MANUAL', CURRENT_TIMESTAMP)
+                INSERT INTO pedido (codigo, origen, ejecucion_id, cliente_codigo, fecha_registro, destino_x, destino_y,
+                    cantidad, plazo_horas, creado_en)
+                VALUES (?1, 'MANUAL', ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
                 RETURNING id
-                """, pedido.id(), pedido.fechaRegistro(), pedido.ubicacion().x(), pedido.ubicacion().y(),
-                pedido.cantidad(), pedido.plazoHoras(), pedido.clienteId()).getSingleResult()).longValue();
+                """, pedido.id(), ejecucionId, pedido.clienteId(), pedido.fechaRegistro(), pedido.ubicacion().x(),
+                pedido.ubicacion().y(), pedido.cantidad(), pedido.plazoHoras()).getSingleResult()).longValue();
 
         boolean enRiesgo = estaEnRiesgo(pedido);
         long pedidoEjecucionId = ((Number) consultar("""

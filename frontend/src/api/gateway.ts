@@ -12,6 +12,7 @@ import type {
   RunConfig,
   SimSnapshot,
 } from '@/domain/types';
+import type { SpeedFactor } from '@/domain/constants';
 
 export type ConnectionStatus = 'connecting' | 'online' | 'offline';
 export type DataSourceMode = 'local' | 'server';
@@ -31,6 +32,8 @@ export interface SimulationGateway {
   start(): Promise<void>;
   stop(): Promise<void>;
   reset(): Promise<void>;
+  /** Cambia la velocidad de la simulación en caliente (solo Simulación 5D y Colapso). */
+  setSpeed(factor: SpeedFactor): Promise<void>;
   registerOrder(input: OrderInput): Promise<OrderResult>;
   registerOrderBatch(inputs: OrderInput[]): Promise<OrderResult[]>;
   loadFile(kind: FileKind, text: string): Promise<FileLoadSummary>;

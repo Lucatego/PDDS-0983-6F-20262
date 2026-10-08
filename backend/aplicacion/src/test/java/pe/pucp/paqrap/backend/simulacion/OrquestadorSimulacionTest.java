@@ -86,6 +86,30 @@ class OrquestadorSimulacionTest {
     }
 
     @Test
+    void reiniciarDetieneLaEjecucionYDejaElSistemaSinConfigurar() {
+        var prep = preparacion(List.of(new Pedido("P1", INICIO, new Nodo(28, 14), 1, 4)));
+        when(lector.preparar(100L)).thenReturn(prep);
+        when(repositorio.obtenerMapeoPedidosEjecucion(100L)).thenReturn(Map.of("P1", 10L));
+        when(repositorio.obtenerMapeoVehiculos(100L)).thenReturn(Map.of("TA01", 101L));
+        orquestador.preparar(100L);
+        orquestador.iniciar();
+
+        // No debe volver a preparar la ejecucion detenida (fallaba con 500 al exigir CONFIGURADA).
+        orquestador.reiniciar();
+
+        assertThat(orquestador.estado()).isEqualTo("NO_CONFIGURADA");
+        assertThat(orquestador.motor()).isNull();
+        assertThat(orquestador.ejecucionId()).isNull();
+        assertThat(orquestador.esActiva()).isFalse();
+        org.mockito.Mockito.verify(lector, org.mockito.Mockito.times(1)).preparar(100L);
+
+        // Reiniciar sin ejecucion es inofensivo y se puede configurar de nuevo.
+        orquestador.reiniciar();
+        orquestador.preparar(100L);
+        assertThat(orquestador.estado()).isEqualTo("CONFIGURADA");
+    }
+
+    @Test
     void avanzarPersisteCiclosYRutasGeneradas() {
         var prep = preparacion(List.of(new Pedido("P1", INICIO, new Nodo(28, 14), 1, 4)));
         when(lector.preparar(100L)).thenReturn(prep);

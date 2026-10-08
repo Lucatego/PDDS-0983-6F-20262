@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.pucp.paqrap.backend.configuracion.PropiedadesOperacion;
 import pe.pucp.paqrap.backend.configuracion.PropiedadesTabu;
+import pe.pucp.paqrap.backend.configuracion.PropiedadesTiempoReal;
 import pe.pucp.paqrap.backend.persistencia.ServicioCargaArchivos;
 import pe.pucp.paqrap.backend.persistencia.TipoArchivo;
 import pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion;
@@ -43,14 +44,16 @@ public class PlanificadorControlador {
     private final ServicioCargaArchivos cargas;
     private final PropiedadesOperacion operacion;
     private final PropiedadesTabu tabu;
+    private final PropiedadesTiempoReal tiempoReal;
     private final Map<String, Integer> conteoArchivos = new java.util.concurrent.ConcurrentHashMap<>();
 
     public PlanificadorControlador(OrquestadorSimulacion orquestador, ServicioCargaArchivos cargas,
-            PropiedadesOperacion operacion, PropiedadesTabu tabu) {
+            PropiedadesOperacion operacion, PropiedadesTabu tabu, PropiedadesTiempoReal tiempoReal) {
         this.orquestador = orquestador;
         this.cargas = cargas;
         this.operacion = operacion;
         this.tabu = tabu;
+        this.tiempoReal = tiempoReal;
     }
 
     @GetMapping("/catalogos")
@@ -101,16 +104,30 @@ public class PlanificadorControlador {
                 params.descansoHasta(), params.descansoMinutos(), params.tamanioParte(), params.costoFijoVehiculo(),
                 params.penalizacionPaquetePendiente(), params.velocidades());
         var configuracion = new ConfiguracionSimulacion(escenario, inicio, flota, caps, 60,
-                escenario == ConfiguracionSimulacion.Escenario.DIA_A_DIA ? 1.0 / 60 : 10.0,
-                tabu.semilla(), params, cfg.considerarIncidencias(), false, 0, false);
+                escenario == ConfiguracionSimulacion.Escenario.DIA_A_DIA ? 1.0 / 60 : tiempoReal.minutosPorSegundoBase(),
+                tabu.semilla(), params, Boolean.TRUE.equals(cfg.considerarIncidencias()), false, 0, false);
         orquestador.configurar(configuracion, tabu.aConfiguracion());
         conteoArchivos.clear();
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Cambia en caliente el multiplicador de velocidad de 5D y Colapso (LE058). El efecto se aplica desde el siguiente
+     * pulso del reloj; Día a día no admite cambio.
+     */
+    @PostMapping("/simulacion/velocidad")
+    public ResponseEntity<Void> velocidad(@RequestBody VelocidadInput input) {
+        Double factor = input == null ? null : input.factor();
+        if (factor == null || factor != Math.rint(factor)) {
+            throw new IllegalArgumentException("El factor de velocidad debe ser 1, 2, 5 o 10");
+        }
+        orquestador.establecerVelocidad(factor.intValue());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/simulacion/iniciar") public ResponseEntity<Void> iniciar() { orquestador.iniciar(); return ResponseEntity.noContent().build(); }
     @PostMapping("/simulacion/detener") public ResponseEntity<Void> detener() { orquestador.detener(); return ResponseEntity.noContent().build(); }
-    @PostMapping("/simulacion/reiniciar") public ResponseEntity<Void> reiniciar() { orquestador.reiniciar(); return ResponseEntity.noContent().build(); }
+    @PostMapping("/simulacion/reiniciar") public ResponseEntity<Void> reiniciar() { orquestador.reiniciar(); conteoArchivos.clear(); return ResponseEntity.noContent().build(); }
 
     @PostMapping("/pedidos")
     public OrderResult pedido(@RequestBody OrderInput input) { return registrar(input); }
@@ -211,7 +228,8 @@ public class PlanificadorControlador {
             var filesVacios = filesSnapshot();
             return Map.ofEntries(Map.entry("scenario", "diaria"), Map.entry("configured", false), Map.entry("running", false),
                     Map.entry("waitingFirstOrder", false), Map.entry("collapsed", false), Map.entry("finished", false),
-                    Map.entry("simMin", 0), Map.entry("runStartSimMin", 0), Map.entry("cycleDay", 1),
+                    Map.entry("simMin", 0), Map.entry("speedFactor", 1), Map.entry("simMinPerSec", 1.0 / 60),
+                    Map.entry("runStartSimMin", 0), Map.entry("cycleDay", 1),
                     Map.entry("epochDate", LocalDate.now().toString()), Map.entry("runElapsedMs", 0), Map.entry("shiftStarts", List.of(420, 900, 1380)),
                     Map.entry("fleet", Map.of("auto", 0, "moto", 0, "bici", 0)), Map.entry("vehicles", List.of()),
                     Map.entry("orders", List.of()), Map.entry("orderHistory", List.of()), Map.entry("incidents", List.of()),
@@ -303,7 +321,7 @@ public class PlanificadorControlador {
         var warehouses = List.of(Map.of("id","central","name","Almacén Central","shortName","Central","pos",Map.of("x",27,"y",14),"infinite",true,"capacity",0,"stock",0,"dispatchedToday",salidasHoyCentral),Map.of("id","noroeste","name","Almacén Nor-Oeste","shortName","Nor-Oeste","pos",Map.of("x",12,"y",38),"infinite",false,"capacity",cfg.capacidades().get("NOROESTE"),"stock",stockActual.getOrDefault("NOROESTE",0),"dispatchedToday",salidasHoyNoroeste),Map.of("id","este","name","Almacén Este","shortName","Este","pos",Map.of("x",57,"y",27),"infinite",false,"capacity",cfg.capacidades().get("ESTE"),"stock",stockActual.getOrDefault("ESTE",0),"dispatchedToday",salidasHoyEste));
         String scenario = switch(cfg.escenario()){case DIA_A_DIA->"diaria";case SIMULACION_5D->"5d";case COLAPSO->"colapso";};
         var files = filesSnapshot();
-        return Map.ofEntries(Map.entry("scenario",scenario),Map.entry("configured",true),Map.entry("running",m.estado().equals("EN_CURSO")),Map.entry("waitingFirstOrder",m.estado().equals("ESPERANDO_PEDIDO")),Map.entry("collapsed",m.estado().equals("COLAPSADA")),Map.entry("finished",m.esFinal()),Map.entry("simMin",ChronoUnit.MINUTES.between(cfg.inicio().toLocalDate().atStartOfDay(),m.reloj())),Map.entry("runStartSimMin",ChronoUnit.MINUTES.between(cfg.inicio().toLocalDate().atStartOfDay(),cfg.inicio())),Map.entry("cycleDay",(int)(ChronoUnit.DAYS.between(cfg.inicio().toLocalDate(),m.reloj().toLocalDate())+1)),Map.entry("epochDate",cfg.inicio().toLocalDate().toString()),Map.entry("runElapsedMs",m.tiempoRealMs()),Map.entry("shiftStarts",List.of(cfg.operacion().inicioTurnoMinuto(),(cfg.operacion().inicioTurnoMinuto()+480)%1440,(cfg.operacion().inicioTurnoMinuto()+960)%1440)),Map.entry("fleet",Map.of("auto",cfg.flota().get(TipoVehiculo.TA),"moto",cfg.flota().get(TipoVehiculo.TM),"bici",cfg.flota().get(TipoVehiculo.TB))),Map.entry("vehicles",vehicles),Map.entry("orders",pedidosAbiertos),Map.entry("orderHistory",historialPedidos),Map.entry("incidents",incidentes),Map.entry("incidentHistory",historialIncidentes),Map.entry("warehouses",warehouses),Map.entry("stats",stats),Map.entry("flashes",flashes),Map.entry("files",files));
+        return Map.ofEntries(Map.entry("scenario",scenario),Map.entry("configured",true),Map.entry("running",m.estado().equals("EN_CURSO")),Map.entry("waitingFirstOrder",m.estado().equals("ESPERANDO_PEDIDO")),Map.entry("collapsed",m.estado().equals("COLAPSADA")),Map.entry("finished",m.esFinal()),Map.entry("simMin",ChronoUnit.MINUTES.between(cfg.inicio().toLocalDate().atStartOfDay(),m.reloj())),Map.entry("speedFactor",m.factorVelocidad()),Map.entry("simMinPerSec",m.minutosPorSegundo()),Map.entry("runStartSimMin",ChronoUnit.MINUTES.between(cfg.inicio().toLocalDate().atStartOfDay(),cfg.inicio())),Map.entry("cycleDay",(int)(ChronoUnit.DAYS.between(cfg.inicio().toLocalDate(),m.reloj().toLocalDate())+1)),Map.entry("epochDate",cfg.inicio().toLocalDate().toString()),Map.entry("runElapsedMs",m.tiempoRealMs()),Map.entry("shiftStarts",List.of(cfg.operacion().inicioTurnoMinuto(),(cfg.operacion().inicioTurnoMinuto()+480)%1440,(cfg.operacion().inicioTurnoMinuto()+960)%1440)),Map.entry("fleet",Map.of("auto",cfg.flota().get(TipoVehiculo.TA),"moto",cfg.flota().get(TipoVehiculo.TM),"bici",cfg.flota().get(TipoVehiculo.TB))),Map.entry("vehicles",vehicles),Map.entry("orders",pedidosAbiertos),Map.entry("orderHistory",historialPedidos),Map.entry("incidents",incidentes),Map.entry("incidentHistory",historialIncidentes),Map.entry("warehouses",warehouses),Map.entry("stats",stats),Map.entry("flashes",flashes),Map.entry("files",files));
     }
 
     private static LinkedHashMap<String,Object> incidenteBase(String kind, int id, LocalDateTime inicio, LocalDateTime fin,
@@ -348,7 +366,7 @@ public class PlanificadorControlador {
         var puntos = ruta.stream().map(PlanificadorControlador::point).toList();
         result.put("path", puntos);
         int pasoIdx = 0; Nodo posicion = ruta.isEmpty() ? unidad.ubicacionInicial() : ruta.getFirst();
-        double heading = 0; boolean encontrado = false;
+        double heading = 0; boolean encontrado = false; boolean interpolado = false;
         for (int i=0;i<pasos.size();i++) {
             var paso = pasos.get(i);
             if (motor.reloj().isBefore(paso.salida())) { posicion = paso.origen(); pasoIdx = i; encontrado = true; break; }
@@ -359,16 +377,19 @@ public class PlanificadorControlador {
             result.put("pos", Map.of("x", paso.origen().x() + (paso.destino().x()-paso.origen().x())*avance,
                     "y", paso.origen().y() + (paso.destino().y()-paso.origen().y())*avance));
             heading = Math.atan2(paso.destino().y()-paso.origen().y(), paso.destino().x()-paso.origen().x());
-            pasoIdx = i; encontrado = true; break;
+            pasoIdx = i; encontrado = true; interpolado = true; break;
         }
-        if (!encontrado || !(result.get("pos") instanceof Map<?,?>)) result.put("pos", point(posicion));
+        // En espera entre tramos (servicio, refrigerio) o con la ruta terminada no hay interpolacion: el vehiculo
+        // esta en el nodo calculado. Antes quedaba en la posicion inicial (el almacen de origen) y el mapa
+        // dibujaba una recta falsa hasta el punto de la ruta.
+        if (!interpolado) result.put("pos", point(posicion));
         result.put("pathIdx", Math.min(pasoIdx, Math.max(0, puntos.size()-1))); result.put("heading", heading);
         String state = "toClient"; int stop = 0;
         for (int i=0;i<viaje.plan.paradas().size();i++) {
             var parada = viaje.plan.paradas().get(i);
             if (!motor.reloj().isBefore(parada.llegada()) && motor.reloj().isBefore(parada.finServicio())) {
                 state = "atClient"; stop = i; result.put("timer", Math.max(0, ChronoUnit.MINUTES.between(motor.reloj(), parada.finServicio())));
-                if (i < viaje.plan.caminos().size()) result.put("pos", point(viaje.plan.caminos().get(i).coordenadas().getLast()));
+                if (!parada.partes().isEmpty()) result.put("pos", point(parada.partes().getFirst().pedido().ubicacion()));
                 break;
             }
             if (!motor.reloj().isBefore(parada.finServicio())) stop = i+1;
@@ -420,7 +441,8 @@ public class PlanificadorControlador {
                 && v.plan.ruta().vehiculo().equalsIgnoreCase(codigo));
         if (ocupado) throw new IllegalArgumentException("Solo se programa mantenimiento a unidades disponibles en almacén");
     }
-    public record RunConfig(String scenario, String startDate, String startTime, Fleet fleet, Capacities capacities, int[] shiftStarts, boolean considerarIncidencias) { }
+    public record RunConfig(String scenario, String startDate, String startTime, Fleet fleet, Capacities capacities, int[] shiftStarts, Boolean considerarIncidencias) { }
+    public record VelocidadInput(Double factor) { }
     public record Fleet(int auto,int moto,int bici) { }
     public record Capacities(int noroeste,int este) { }
     public record OrderInput(String clientId,int qty,int hourLimit,int x,int y) { }

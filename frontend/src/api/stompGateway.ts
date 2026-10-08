@@ -43,6 +43,7 @@ export function createStompGateway(opts: { apiUrl: string; wsUrl: string }): Sim
     start: () => api.post('/simulacion/iniciar'),
     stop: () => api.post('/simulacion/detener'),
     reset: () => api.post('/simulacion/reiniciar'),
+    setSpeed: (factor) => api.post('/simulacion/velocidad', { factor }),
     registerOrder: (input) => api.post<OrderResult>('/pedidos', input),
     registerOrderBatch: (inputs) => api.post<OrderResult[]>('/pedidos/lote', inputs),
     loadFile: (kind, text) => api.postText<FileLoadSummary>(`/archivos/${kind}`, text),

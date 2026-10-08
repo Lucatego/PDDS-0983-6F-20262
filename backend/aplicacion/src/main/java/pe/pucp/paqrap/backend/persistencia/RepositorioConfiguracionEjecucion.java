@@ -92,6 +92,24 @@ public class RepositorioConfiguracionEjecucion {
         return id;
     }
 
+    /**
+     * Cierra como {@code ERROR} (motivo {@code ERROR}) las ejecuciones que quedaron activas en la base, por ejemplo
+     * tras caerse o detenerse el servidor sin cerrar la simulacion (LE060). Sin esto, la guarda de
+     * {@link #crear} impediria configurar otra ejecucion. Solo debe llamarse al arrancar, cuando la memoria del
+     * servidor no tiene ningun motor, y con un unico servidor sobre la base.
+     *
+     * @return cantidad de ejecuciones cerradas
+     */
+    @Transactional
+    public int cerrarEjecucionesHuerfanas(String mensaje) {
+        consultar("SELECT pg_advisory_xact_lock(20262, 5)").getResultList();
+        return consultar("""
+                UPDATE ejecucion SET estado = 'ERROR', motivo_fin = 'ERROR', mensaje_fin = ?1,
+                    fecha_fin = fecha_actual, fecha_real_fin = CURRENT_TIMESTAMP, version = version + 1
+                WHERE estado IN ('CONFIGURADA','ESPERANDO_PEDIDO','EN_CURSO','PAUSADA')
+                """, mensaje).executeUpdate();
+    }
+
     private Query consultar(String sql, Object... parametros) {
         Query consulta = entidad.createNativeQuery(sql);
         for (int i = 0; i < parametros.length; i++) consulta.setParameter(i + 1, parametros[i]);

@@ -28,6 +28,7 @@ export function StartGateDialog() {
   const [fleet, setFleet] = useState({ auto: '6', moto: '10', bici: '8' });
   const [caps, setCaps] = useState({ noroeste: '1000', este: '1000' });
   const [shifts, setShifts] = useState(['07:00', '15:00', '23:00']);
+  const [incidencias, setIncidencias] = useState(true);
 
   useEffect(() => {
     if (gate.open && gate.preset) setScenario(gate.preset);
@@ -46,6 +47,7 @@ export function StartGateDialog() {
       },
       capacities: { noroeste: clampInt(caps.noroeste, 100, 5000, 1000), este: clampInt(caps.este, 100, 5000, 1000) },
       shiftStarts: [parseHHMM(shifts[0], 420), parseHHMM(shifts[1], 900), parseHHMM(shifts[2], 1380)],
+      considerarIncidencias: incidencias,
     };
     configure.mutate(cfg, {
       onSuccess: () => {
@@ -166,6 +168,14 @@ export function StartGateDialog() {
             </div>
           </fieldset>
         </div>
+
+        <label className="flex cursor-pointer items-start gap-2.5">
+          <input type="checkbox" className="mt-0.5" checked={incidencias} onChange={(e) => setIncidencias(e.target.checked)} />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[13px] font-medium text-ink">Considerar incidencias en la planificación</span>
+            <span className="field-hint">Averías, mantenimientos y bloqueos afectan las rutas. Si se desactiva, el planificador los ignora.</span>
+          </span>
+        </label>
       </form>
     </Dialog>
   );

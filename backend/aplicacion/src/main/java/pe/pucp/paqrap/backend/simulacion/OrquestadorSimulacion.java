@@ -135,14 +135,22 @@ public class OrquestadorSimulacion {
     }
 
     /**
-     * Reinicia la simulación actual si está configurada.
+     * Detiene la ejecución actual y deja el sistema sin configurar, como al arrancar la aplicación: el siguiente
+     * paso es configurar una ejecución nueva (contrato del front: «Reiniciar» vuelve a «Sin configurar»).
+     * La ejecución detenida queda en la base de datos; el motor y la preparación se descartan.
      */
     public synchronized void reiniciar() {
-        if (ejecucionId != null) {
-            detener();
-            preparar(ejecucionId);
-            LOG.info("Ejecución {} reiniciada", ejecucionId);
-        }
+        if (motor == null) return;
+        detener();
+        LOG.info("Ejecución {} reiniciada: el sistema queda sin configurar", ejecucionId);
+        this.ejecucionId = null;
+        this.preparacion = null;
+        this.motor = null;
+        this.planificador = null;
+        this.codigosAPedidoEjecucionId = new LinkedHashMap<>();
+        this.vehiculosId = new LinkedHashMap<>();
+        this.ultimoCicloPersistido = -1;
+        this.ultimoEventoPersistido = 0;
     }
 
     /**
@@ -230,6 +238,22 @@ public class OrquestadorSimulacion {
         }
         persistirBitacoraYResumen();
         LOG.info("Mantenimiento registrado en {} en ejecución {}", mantenimiento.vehiculo(), ejecucionId);
+    }
+
+    /**
+     * Cambia en caliente el multiplicador de velocidad del reloj (5D y Colapso). Surte efecto desde el siguiente pulso
+     * porque {@link #avanzar} y el motor leen el factor vigente en cada avance. No se persiste: {@code aceleracion_reloj}
+     * conserva la velocidad base configurada y el factor se reinicia a 1 al configurar o reiniciar.
+     *
+     * @param factor 1, 2, 5 o 10
+     * @throws IllegalArgumentException si no hay simulacion, el escenario es Dia a dia o el factor no es valido
+     */
+    public synchronized void establecerVelocidad(int factor) {
+        if (motor == null) {
+            throw new IllegalArgumentException("No hay simulación configurada");
+        }
+        motor.establecerFactorVelocidad(factor);
+        LOG.info("Velocidad de la ejecución {} cambiada a x{}", ejecucionId, factor);
     }
 
     public synchronized MotorSimulacion motor() {

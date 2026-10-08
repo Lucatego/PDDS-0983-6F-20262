@@ -4,7 +4,7 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP) permanece pendiente. No se ha aplicado el esquema al RDS.
+Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP en `/ws`) está implementado y probado localmente (ver «Tiempo real»). No se ha aplicado el esquema al RDS.
 
 ## Requisitos
 
@@ -96,11 +96,39 @@ backend/
         ├── api                  SaludControlador y PlanificadorControlador REST, ManejadorErrores
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
         ├── simulacion           ConfiguracionSimulacion, MotorSimulacion, orquestador y resumen (B-05/B-07)
+        ├── tiemporeal           STOMP /ws, difusión de SimSnapshot/LogEvent y pulso del reloj (B-09)
         └── persistencia         Carga de archivos y preparación/configuración persistida de ejecuciones
 ```
 
 El único algoritmo habilitado por la aplicación es Tabu Search (`TabuSearchPlanner`); las ejecuciones con otro
 algoritmo se rechazan al preparar el motor.
+
+### Tiempo real: STOMP en `/ws` (B-09)
+
+- Endpoint WebSocket nativo `ws://<host>:8080/ws` (sin SockJS, sin prefijo `/api`), como espera `stompGateway.ts`.
+  Broker simple en memoria para `/topic/**`, con heartbeat de 10 s.
+- `/topic/simulacion/estado`: `SimSnapshot` completo, armado por `PlanificadorControlador.estado()` (el mismo JSON de
+  `GET /api/simulacion/estado`). Se emite `frecuencia-hz` veces por segundo (5 por defecto, 1 a 10) mientras la ejecución
+  está `EN_CURSO` y de inmediato cuando cambia el estado, se reemplaza la ejecución, aparece un evento nuevo en una
+  ejecución que no corre, se ejecuta un `POST /api/**` exitoso o se suscribe un cliente. En pausa o detenida no hay
+  envío periódico.
+- `/topic/simulacion/eventos`: un `LogEvent` (`id`, `simMin`, `text`, `kind`) por cada evento de la bitácora del motor
+  (misma secuencia que persiste B-07). Los clientes que se conectan tarde no reciben los eventos anteriores.
+- `RelojSimulacion` invoca `OrquestadorSimulacion.avanzar` cada `periodo-reloj-ms` (200) con el tiempo real transcurrido
+  mientras la ejecución está en curso; las pausas no acumulan tiempo y el tiempo de planificación no se acredita.
+- Propiedades en `paqrap.tiempo-real.*` (`application.yml`): `difusion-habilitada`, `reloj-habilitado`, `frecuencia-hz`,
+  `periodo-sondeo-ms`, `periodo-reloj-ms`, `max-salto-reloj-ms`, `minutos-por-segundo-base` y `origenes-permitidos`
+  (`*` por ahora: sin autenticación).
+- **Velocidad del reloj.** Base de 3 minutos simulados por segundo real (`minutos-por-segundo-base: 3.0`) en 5D y Colapso:
+  5 días (7200 min) tardan unos 40 min reales a x1. Día a día corre en tiempo real (1/60) y no admite cambio.
+  `POST /api/simulacion/velocidad` con `{"factor": 1|2|5|10}` multiplica la base en caliente (aunque corra la simulación;
+  el siguiente pulso ya usa el valor nuevo) y responde 204. Responde 400 `{ "mensaje": ... }` si el factor no es 1, 2, 5 o 10,
+  si el escenario es `diaria` o si no hay simulación configurada. El factor vuelve a 1 al configurar o reiniciar. El `SimSnapshot`
+  (`GET /api/simulacion/estado` y `/topic/simulacion/estado`) incluye `speedFactor` (entero, 1 por defecto) y `simMinPerSec`
+  (minutos simulados por segundo real efectivos; 1/60 en diaria). `configuracion_ejecucion.aceleracion_reloj` guarda solo la base;
+  el factor no se persiste.
+- `POST /api/simulacion/configuracion`: `considerarIncidencias` es opcional (si falta o es `null`, se asume `false`).
+- Las pruebas del canal (`CanalStompTest`) levantan un servidor real en puerto aleatorio sin base de datos.
 
 ### Migraciones y carga de archivos (B-03/B-04)
 
@@ -134,6 +162,11 @@ se conserva para diagnóstico y se desecha junto con la instancia. En PowerShell
 $env:PAQRAP_PRUEBA_DB_URL = 'jdbc:postgresql://127.0.0.1:55483/postgres'
 .\mvnw.cmd test
 ```
+
+`SimulacionPostgresqlTest` (registro de pedidos manuales y una 5D completa persistida) se activa con
+`PAQRAP_PRUEBA_DB_URL=jdbc:postgresql://localhost:5433/paqrap` (cualquier PostgreSQL de `localhost`/`127.0.0.1`) y, si el
+usuario no es `paqrap_prueba` sin contraseña, `PAQRAP_PRUEBA_DB_USUARIO` y `PAQRAP_PRUEBA_DB_CLAVE` (contenedor de
+`compose.yaml`: `paqrap` / `paqrap_local`). Crea un esquema aleatorio propio y lo borra al terminar.
 
 Sin esa variable, las pruebas PostgreSQL se omiten; las unitarias y las existentes se ejecutan sin BD.
 Esta verificación local no sustituye P-08 (estrategia automatizada de BD/CI) ni acredita los 10 segundos de
@@ -194,8 +227,8 @@ las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el res
 incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
 requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
 le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
-maestros asociados. B-08 REST está en curso; STOMP se implementará en B-09. Última suite: 88 pruebas ejecutadas,
-0 fallas y 14 omitidas (13 pruebas PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
+maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`): 109 pruebas, 0 fallas y 14 omitidas
+(13 de PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|
@@ -207,6 +240,10 @@ maestros asociados. B-08 REST está en curso; STOMP se implementará en B-09. Ú
 | aplicacion | `SaludControladorTest` | `GET /api/salud` por HTTP real, prefijo `/api`, errores 404/405 con `{ mensaje }` |
 | aplicacion | `ManejadorErroresTest` | Traducción de excepciones a `{ mensaje }` |
 | aplicacion | `ServicioPlanificacionTest` | TS vía el servicio sobre un `EstadoOperacion` pequeño → `COMPLETA`, reproducible |
+| aplicacion | `VelocidadSimulacionTest` | Base de 3 min/s en 5D, factor en caliente en motor y orquestador, factores inválidos, Día a día fijo, motor nuevo en x1 |
+| aplicacion | `VelocidadHttpTest`, `VelocidadHttpDiariaTest`, `VelocidadHttpSinSimulacionTest` | `POST /api/simulacion/velocidad` por HTTP: 204, 400 con mensaje, campos `speedFactor`/`simMinPerSec`, difusión inmediata |
+| aplicacion | `ConfiguracionHttpTest` | `POST /api/simulacion/configuracion` sin/con `considerarIncidencias` (el cuerpo que antes daba 400) y velocidad base |
+| aplicacion | `SimulacionPostgresqlTest` | (optativa) pedido manual por la API y 5D completa persistida en PostgreSQL local |
 
 ## Origen del código del planificador
 

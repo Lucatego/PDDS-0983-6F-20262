@@ -1,0 +1,25 @@
+# PostgreSQL local para desarrollo de PaqRap (P-07). Misma versión mayor que el RDS (18).
+# Uso, desde backend/:  docker compose up -d   |   docker compose down   |   docker compose down -v (borra los datos)
+# Credenciales solo de desarrollo local; no usar en servidores compartidos.
+services:
+  postgres:
+    image: postgres:18
+    container_name: paqrap-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paqrap
+      POSTGRES_USER: paqrap
+      POSTGRES_PASSWORD: paqrap_local
+    ports:
+      - "5433:5432"   # 5433 en el host: evita chocar con un PostgreSQL instalado en Windows (5432)
+    volumes:
+      # PostgreSQL 18 guarda los datos bajo /var/lib/postgresql (ya no en .../data)
+      - paqrap-datos:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paqrap -d paqrap"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  paqrap-datos:

@@ -86,7 +86,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ Averías tipadas, regla de indisponibilidad por tipo, indicador por ejecución separado de averías aleatorias, filtrado/replanificación de demanda no comprometida; pruebas unitarias verdes. V3 y carga RDS quedan pendientes de la verificación manual del usuario. |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ✅ eventos, consolidado parcial/final e indicadores por plazo persistidos idempotentemente; pruebas unitarias aisladas |
 | B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre |
-| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ⬜ |
+| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | 🔄 implementado y probado localmente (rama `feature/backend-stomp`): endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
 
 ### F4 — Integración
 
@@ -141,6 +141,29 @@ reprogramaciones e incidencias activas. Se añadieron pruebas unitarias de cálc
 pruebas de PostgreSQL local ni RDS.
 Suite del backend en Java 21 (`-Dmaven.compiler.release=21`): 88 ejecutadas, 0 fallas y 14 omitidas (13 de PostgreSQL
 y 1 por dataset externo opcional); `git diff --check` sin errores.
+
+**Rama `feature/backend-velocidad` (08/10/2026), sobre B-08/B-09:**
+- `POST /api/pedidos` fallaba porque `RepositorioSimulacion.registrarPedidoManual` insertaba `pedido.fecha_real_registro`
+  (no existe; la columna es `creado_en`, NOT NULL sin valor por defecto, por lo que el INSERT ahora la llena con
+  `CURRENT_TIMESTAMP`) y omitía `ejecucion_id`, que el CHECK de `pedido` exige para origen MANUAL. Sin migración (opción A).
+  `registrar()` del controlador convierte cualquier excepción en `OrderResult{ok:false}`, por lo que el fallo no se veía como 500.
+  `SimulacionPostgresqlTest` (optativa, PostgreSQL local con `PAQRAP_PRUEBA_DB_URL=jdbc:postgresql://localhost:5433/paqrap`)
+  registra un pedido por la API y corre una 5D completa que ejercita los demás INSERT/UPDATE de la simulación: no hay más
+  columnas inexistentes. **Hallazgo abierto:** `RepositorioSimulacion.registrarIncidencia` viola `incidencia_check2` para
+  bloqueos manuales (`POST /api/bloqueos` → 500): el CHECK exige `bloqueo_id` (hay que insertar antes en `bloqueo`/`bloqueo_vertice`);
+  además guarda el fin previsto en `fecha_fin` (la columna de fin previsto es `fecha_fin_prevista`). El mantenimiento manual sí persiste;
+  la avería manual no se probó contra la BD (necesita una unidad en ruta).
+- Control de velocidad (contrato acordado con el front): base `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 min simulados/s
+  para 5D y Colapso (antes 10,0 fijo; 5 días ≈ 40 min reales a x1); Día a día sigue en 1/60 y no admite cambio.
+  `POST /api/simulacion/velocidad {"factor":1|2|5|10}` aplica base × factor en caliente (204; 400 con `{mensaje}` si el
+  factor no es válido, el escenario es diaria o no hay simulación). El factor vive en `MotorSimulacion` y vuelve a 1 al configurar o
+  reiniciar (motor nuevo). `SimSnapshot` incluye `speedFactor` y `simMinPerSec` (1/60 en diaria). `configuracion_ejecucion.aceleracion_reloj`
+  conserva la velocidad **base** (3,0; 1/60 en diaria) y no se actualiza con el factor: es un control operativo transitorio y,
+  si se guardara el valor efectivo, un reinicio lo tomaría como nueva base. Pendiente decidir si el cambio debe quedar en la bitácora (LE054; requeriría un tipo de evento nuevo).
+- `POST /api/simulacion/configuracion`: `considerarIncidencias` es opcional (ausente o `null` → false). La causa del 400 era el
+  `boolean` primitivo de `RunConfig`: Jackson 3 falla con campos primitivos ausentes. El cuerpo exacto de la prueba manual
+  (con `shiftStarts` como `int[]`) ahora responde 204. Los demás DTO con primitivos (`OrderInput`, `AveriaInput`, `Fleet`, etc.) siguen
+  exigiendo todos sus campos.
 
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|
