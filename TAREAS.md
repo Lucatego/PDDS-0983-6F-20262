@@ -64,16 +64,16 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | M-02 | Inventario de datos del backend y planificador | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 aprobado |
 | M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 aprobado |
 | M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 aprobado |
-| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026); v1.0.1 el 02/10/2026 (corrección editorial, A-01) | ✅ |
+| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026); v1.0.1 el 02/10/2026 (corrección editorial, A-01); v1.1.0 el 08/10/2026 (DD-32 y DD-26 revisada, aprobadas por el usuario; P-09) | ✅ |
 
 ### F2 — Documento de estructura de datos (redactor)
 
 | Id | Tarea | Estado |
 |---|---|---|
-| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0.1 |
-| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.0.1 |
-| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0.1 |
-| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.0.1 (regenerado el 02/10/2026, 73 páginas) |
+| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.1.0 |
+| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.1.0 |
+| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.1.0 |
+| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.1.0 (regenerado el 08/10/2026 con un generador nuevo en `docs/estructura-datos/generar_docx.js`; 73 páginas en Word) |
 
 ### F3 — Backend
 
@@ -181,10 +181,14 @@ con Flyway V1–V3 sobre la BD del contenedor y la GUI conectada por STOMP (P-07
 | P-06 | ✅ Cerrado (02/10/2026, commit 57f8564; auditoría: CONCUERDA CON OBSERVACIONES) · Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
 | P-07 | ✅ Cerrado (08/10/2026) · Contenedores locales | `backend/compose.yaml` (Gandy): PostgreSQL 18 en el puerto 5433. `compose.yaml` de la raíz (rama `feature/contenedores`): BD + backend (`eclipse-temurin:25`, Flyway activado contra la BD local) + frontend (`nginx:1.28-alpine`, proxy de `/api` y `/ws`). Verificado: V1–V3 aplicadas, GUI en `http://localhost` conectada por STOMP. Uso en `README.md` («Ejecutar todo con Docker»). El RDS sigue sin modificarse. | Resuelto |
 | P-08 | Pruebas contra la base de datos | Las pruebas excluyen hoy DataSource, JPA y Flyway (`backend/aplicacion/src/test/resources/config/application.yml`). Definir cómo probar contra PostgreSQL (`@DataJpaTest`, Testcontainers u otra; consultar librerías) y quitar las exclusiones. | Cuando avise el usuario |
-| P-09 | Código vs. modelo de datos v1.0.1 (08/10/2026) | (a) `V3__considerar_incidencias.sql` agrega `configuracion_ejecucion.considerar_incidencias` BOOLEAN NOT NULL DEFAULT FALSE (criterio de B-06), ausente en `context/24.dis.estructura.datos.v01.md`. (b) DD-26 y V2 fijan `ACELERACION_5D` = 4,0 (5D ≈ 30 min), pero el backend usa `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 (≈ 40 min) y el factor ×1/×2/×5/×10 en caliente, no persistido; `aceleracion_reloj` guarda la base. Decidir: registrar en el modelo (nueva versión, DD-32 y DD-26 revisada, redactor + auditor) o alinear el código. | Antes de la siguiente versión del modelo |
+| P-09 | Código vs. modelo de datos (08/10/2026) | Registrado en el modelo 1.1.0 (DD-32 `considerar_incidencias`; DD-26 revisada: base 3,0 min sim./s, factor ×1/×2/×5/×10 no persistido). **Queda para el backend:** (a) V2 siembra `cat_escenario.aceleracion_defecto` y `ACELERACION_5D` = 4,0: migración V4 a 3,0 o que el backend lea el parámetro de la BD (hoy usa `paqrap.tiempo-real.minutos-por-segundo-base`); (b) decidir si el cambio de factor va a la bitácora (LE054): reutilizar `CAMBIO_VELOCIDAD` con otro `detalle` o un tipo nuevo. Al resolverlo, quitar las notas «V2 aún siembra 4,0» del modelo y regenerar el `.docx` (A-04). | Próxima tarea de backend |
 | P-10 | DAS desactualizado (08/10/2026) | `context/23.dis.arquitectura.solucion.v01.md` (v1.0): dice Java 21 (vigente Java 25, DD-31), R-02 deja sin definir servidor, canal y SGBD (ya decididos: Spring Boot 4, STOMP, PostgreSQL) y la vista de despliegue (§4.6, Figura 5, Tabla 10) no incluye los contenedores (`compose.yaml`: nginx, backend JRE 25, PostgreSQL 18). Actualizar con redactor + auditor y regenerar el `.docx`. | Próxima versión del DAS |
 | A-01 | ✅ Cerrado (02/10/2026) · Auditoría P-06 · OBSERVACIÓN | `24.dis.estructura.datos.v01`: el historial tenía dos filas con versión 1.0 (30/09 y 02/10). Decisión del usuario: la corrección editorial sube el documento a **1.0.1** (commit 20a110a; `.docx` regenerado, 73 páginas). Auditoría: CONCUERDA CON OBSERVACIONES. | Resuelto |
 | A-02 | Auditoría P-06 · OBSERVACIÓN | Índice del `.docx`: el número de página va con un tabulador literal en el texto y solo se verificó en LibreOffice (73 páginas). Revisar en Word; ver `FORMATO-DOCUMENTOS.md` §6. | Más adelante (no urgente) |
+| A-03 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · CRÍTICA | La trazabilidad de `considerar_incidencias` citaba LE071 (validación de archivos de bloqueo). Corregido a LE073, LE075, LE087 y LE099 (commit 9846d23). | Resuelto |
+| A-04 | Auditoría del modelo 1.1.0 · ALERTA | El modelo dice 3,0 y V2 siembra 4,0 hasta que exista V4: se sigue en P-09 (a). | Con P-09 |
+| A-05 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · ALERTA | `CLAUDE.md`, `TAREAS.md`, `README.md` y `FORMATO-DOCUMENTOS.md` citaban la v1.0.1 / DD-01..DD-31: actualizados a 1.1.0. | Resuelto |
+| A-06..A-08 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · OBSERVACIONES | «Activas» → «vigentes o que comienzan dentro de la ventana del ciclo» (DD-32, §6.4.2, §12); pendiente (b) de DD-26 precisado (`CAMBIO_VELOCIDAD` vs. tipo nuevo; `POST /simulacion/velocidad` ≠ `PUT /simulacion/velocidades`); `speedFactor`/`simMinPerSec` marcados como implementados en §9.2. | Resuelto |
 
 Las alertas del agente `auditor` se registran en esta tabla con id `A-nn` (gravedad, documentos y secciones
 implicados, acción sugerida) y se cierran con el usuario.

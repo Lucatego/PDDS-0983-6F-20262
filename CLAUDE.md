@@ -27,7 +27,7 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
-- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.0.1); es la fuente para el DDL.
+- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.1.0, 08/10/2026); es la fuente para el DDL.
   Su `.docx` se regenera con `docs/estructura-datos/generar_docx.js` (local, no versionado; ver `TAREAS.md` P-02).
 
 ## 2. El caso en una página
@@ -245,10 +245,10 @@ Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026)
 16. **Numeración AG**: la LE v03 difiere de Visión/DAS. Usar la LE v03 salvo indicación contraria.
 17. **CU-05** (Gestión de almacenes) es copia de CU-04 (corrección pendiente, P-04).
 18. **Estructura de repo**: el plan pide `/src/planificador`, `/src/visualizador`, `/data`…; el repo usa `frontend/`.
-19. **Código vs. modelo v1.0.1** (P-09, 08/10/2026): V3 agrega `configuracion_ejecucion.considerar_incidencias`
-   (BOOLEAN, FALSE), que el modelo no tiene; la aceleración base de 5D/Colapso sale de
-   `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 (5D ≈ 40 min) en vez del parámetro `ACELERACION_5D` = 4,0 de
-   DD-26/V2, y el factor ×1/×2/×5/×10 en caliente no se persiste. Registrar en el modelo o alinear el código.
+19. ✅ **Código vs. modelo** (P-09): registrado en el modelo 1.1.0 (08/10/2026): DD-32 (`considerar_incidencias`, V3) y
+   DD-26 revisada (base 3,0 min sim./s en 5D y Colapso, 5D ≈ 40 min; factor ×1/×2/×5/×10 en caliente, no persistido).
+   Pendientes de backend: V2 aún siembra 4,0 (migración V4 o leer el parámetro de la BD) y decidir si el cambio de
+   factor va a la bitácora (reutilizar `CAMBIO_VELOCIDAD` o tipo nuevo).
 20. **DAS desactualizado** (P-10): dice Java 21, deja abiertas las tecnologías (R-02) y su vista de despliegue no
    tiene contenedores.
 
@@ -258,7 +258,7 @@ Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
   modelo de datos v1.0 **aprobado** el 30/09/2026 (`context/24.dis.estructura.datos.v01.md`, 44 tablas,
-  DD-01..DD-31, PostgreSQL); v1.0.1 (02/10/2026) corrige el estado de aprobación. Tablero en `TAREAS.md`.
+  DD-01..DD-31, PostgreSQL); v1.0.1 (02/10/2026) corrige el estado de aprobación; v1.1.0 (08/10/2026) agrega DD-32 y revisa DD-26. Tablero en `TAREAS.md`.
 Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webmvc`), validation, websocket (STOMP),
   Spring Data JPA, Flyway (+ `flyway-database-postgresql`), driver PostgreSQL; pruebas con `starter-test` y
   `starter-webmvc-test`. BD en AWS con credenciales en `backend/.env` (plantilla `.env.example`); contenedor local
@@ -354,7 +354,7 @@ solución integrada `sol.integrada.sem08`.
 | `21.dis.selec.algoritmos.v03.md` | ISA: TS y ALNS, pseudocódigo, operadores |
 | `22.dis.experim.v03.md` | IEN: experimento TS vs ALNS, EstadoOperacion, función objetivo |
 | `23.dis.arquitectura.solucion.v01.md` | DAS: vistas, entidades, decisiones DA-01..10, riesgos |
-| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.0.1 (44 tablas, DD-01..DD-31, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
+| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.1.0 (44 tablas, DD-01..DD-32, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
 | `51.plan.proyecto.v01.md` | Plan, cronograma por semana, roles, estructura de repo |
 | `61.std.GUI.v01.md` | Estándar de interfaz (≈1,3 MB por imágenes) |
 | `62.std.programacion.v01.md` | Estándar de programación y Git |
