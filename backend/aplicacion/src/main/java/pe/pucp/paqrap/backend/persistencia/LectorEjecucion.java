@@ -45,7 +45,8 @@ public class LectorEjecucion {
         Object[] opciones = unica("""
                 SELECT c.sa_minutos,c.aceleracion_reloj,c.servicio_minutos,c.plazo_incluye_servicio,
                     c.turno_minutos,t.minuto_inicio,c.descanso_desde_min,c.descanso_hasta_min,c.descanso_minutos,
-                    c.tamanio_parte,c.costo_fijo_vehiculo,c.penalizacion_paquete_pendiente
+                    c.tamanio_parte,c.costo_fijo_vehiculo,c.penalizacion_paquete_pendiente,
+                    c.averias_aleatorias,c.tasa_averias_dia,c.trasvase_habilitado
                 FROM configuracion_ejecucion c JOIN turno_ejecucion t ON t.ejecucion_id=c.ejecucion_id
                 WHERE c.ejecucion_id=?1 AND t.numero=1
                 """, id);
@@ -74,8 +75,12 @@ public class LectorEjecucion {
         var operacion = new ParametrosOperacion(entero(opciones[2]), (Boolean) opciones[3], entero(opciones[4]),
                 entero(opciones[5]), entero(opciones[6]), entero(opciones[7]), entero(opciones[8]),
                 entero(opciones[9]), decimal(opciones[10]), decimal(opciones[11]), velocidades);
+        boolean averiasAleatorias = (Boolean) opciones[12];
+        double tasaAverias = decimal(opciones[13]);
+        boolean trasvase = (Boolean) opciones[14];
         var configuracion = new ConfiguracionSimulacion(escenario, inicio, flota, capacidades,
-                entero(opciones[0]), decimal(opciones[1]), semilla, operacion);
+                entero(opciones[0]), decimal(opciones[1]), semilla, operacion,
+                averiasAleatorias, averiasAleatorias, tasaAverias, trasvase);
         Object[] tabu = unica("""
                 SELECT max_iteraciones,tenencia_tabu,sin_mejora_max,candidatos_por_iteracion,presupuesto_ms,algoritmo
                 FROM configuracion_algoritmo WHERE ejecucion_id=?1

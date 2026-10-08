@@ -76,8 +76,10 @@ public final class MotorSimulacion {
 
     private final ConfiguracionSimulacion configuracion;
     private final List<Pedido> demanda;
-    private final List<Bloqueo> bloqueos;
-    private final List<Mantenimiento> mantenimientos;
+    private final List<Bloqueo> bloqueos = new ArrayList<>();
+    private final List<Mantenimiento> mantenimientos = new ArrayList<>();
+    private final List<Averia> averias = new ArrayList<>();
+    private final FiltroIncidencias filtroIncidencias;
     private final Map<String, Almacen> almacenes;
     private final Map<String, Integer> reservas = new LinkedHashMap<>();
     private final Map<String, PedidoVivo> pedidos = new LinkedHashMap<>();
@@ -97,6 +99,7 @@ public final class MotorSimulacion {
     public MotorSimulacion(ConfiguracionSimulacion configuracion, List<Pedido> demanda, List<Almacen> almacenes,
             List<Bloqueo> bloqueos, List<Mantenimiento> mantenimientos) {
         this.configuracion = configuracion;
+        this.filtroIncidencias = new FiltroIncidencias(configuracion.considerarIncidencias());
         this.demanda = new ArrayList<>(demanda.stream().filter(p -> !p.fechaRegistro().isBefore(configuracion.inicio()))
                 .filter(p -> configuracion.finHorizonte() == null
                         || p.fechaRegistro().isBefore(configuracion.finHorizonte()))
@@ -104,8 +107,8 @@ public final class MotorSimulacion {
         if (this.demanda.stream().map(Pedido::id).distinct().count() != this.demanda.size()) {
             throw new IllegalArgumentException("Pedidos duplicados en la demanda");
         }
-        this.bloqueos = List.copyOf(bloqueos);
-        this.mantenimientos = List.copyOf(mantenimientos);
+        if (bloqueos != null) this.bloqueos.addAll(bloqueos);
+        if (mantenimientos != null) this.mantenimientos.addAll(mantenimientos);
         this.almacenes = new LinkedHashMap<>();
         for (var almacen : almacenes) {
             if (!almacen.ilimitado() && almacen.stock() > configuracion.capacidades().get(almacen.id())) {
@@ -133,15 +136,27 @@ public final class MotorSimulacion {
     }
 
     private MotorSimulacion(MotorSimulacion otro) {
-        configuracion = otro.configuracion; demanda = new ArrayList<>(otro.demanda);
-        bloqueos = otro.bloqueos; mantenimientos = otro.mantenimientos; flota = otro.flota;
-        almacenes = new LinkedHashMap<>(otro.almacenes); reservas.putAll(otro.reservas);
+        configuracion = otro.configuracion;
+        filtroIncidencias = otro.filtroIncidencias;
+        demanda = new ArrayList<>(otro.demanda);
+        bloqueos.addAll(otro.bloqueos);
+        mantenimientos.addAll(otro.mantenimientos);
+        averias.addAll(otro.averias);
+        flota = otro.flota;
+        almacenes = new LinkedHashMap<>(otro.almacenes);
+        reservas.putAll(otro.reservas);
         otro.pedidos.forEach((id, pedido) -> pedidos.put(id, new PedidoVivo(pedido)));
         otro.viajes.forEach(viaje -> viajes.add(new Viaje(viaje)));
-        ciclos.addAll(otro.ciclos); eventos.addAll(otro.eventos);
-        reloj = otro.reloj; siguienteCiclo = otro.siguienteCiclo; siguienteRecarga = otro.siguienteRecarga;
-        demandaIngresada = otro.demandaIngresada; estado = otro.estado; motivoFin = otro.motivoFin;
-        pedidoColapso = otro.pedidoColapso; tiempoRealMs = otro.tiempoRealMs;
+        ciclos.addAll(otro.ciclos);
+        eventos.addAll(otro.eventos);
+        reloj = otro.reloj;
+        siguienteCiclo = otro.siguienteCiclo;
+        siguienteRecarga = otro.siguienteRecarga;
+        demandaIngresada = otro.demandaIngresada;
+        estado = otro.estado;
+        motivoFin = otro.motivoFin;
+        pedidoColapso = otro.pedidoColapso;
+        tiempoRealMs = otro.tiempoRealMs;
     }
 
     public MotorSimulacion copiar() { return new MotorSimulacion(this); }
@@ -347,8 +362,12 @@ public final class MotorSimulacion {
                 descansados.add(viaje.plan.ruta().vehiculo());
             }
         }
-        var entrada = new EstadoOperacion(reloj, pendientes, flotaProyectada(), disponibles, bloqueos, List.of(),
-                mantenimientos.stream().filter(m -> codigos.contains(m.vehiculo())).toList(), List.of(), descansados);
+        var bloqueosActivos = filtroIncidencias.filtrarBloqueos(reloj, bloqueos, configuracion.saMinutos());
+        var averiasActivas = filtroIncidencias.filtrarAverias(reloj, averias, configuracion.saMinutos(), codigos);
+        var mantenimientosActivos = filtroIncidencias.filtrarMantenimientos(reloj, mantenimientos, configuracion.saMinutos(), codigos);
+
+        var entrada = new EstadoOperacion(reloj, pendientes, flotaProyectada(), disponibles, bloqueosActivos,
+                averiasActivas, mantenimientosActivos, List.of(), descansados);
         ResultadoPlanificacion resultado = planificador.planificar(entrada, configuracion.operacion());
         if (!resultado.evaluacion().factible()) {
             throw new IllegalStateException("El planificador devolvio rutas inviables");
@@ -423,6 +442,21 @@ public final class MotorSimulacion {
         return primero.isBefore(segundo) ? primero : segundo;
     }
 
+    public void registrarAveria(Averia averia) {
+        averias.add(averia);
+        evento("AVERIA_REGISTRADA", "Averia registrada en " + averia.vehiculo(), null, averia.vehiculo(), null, null);
+    }
+
+    public void registrarBloqueo(Bloqueo bloqueo) {
+        bloqueos.add(bloqueo);
+        evento("BLOQUEO_REGISTRADO", "Bloqueo registrado", null, null, null, null);
+    }
+
+    public void registrarMantenimiento(Mantenimiento mantenimiento) {
+        mantenimientos.add(mantenimiento);
+        evento("MANTENIMIENTO_INICIADO", "Mantenimiento en " + mantenimiento.vehiculo(), null, mantenimiento.vehiculo(), null, null);
+    }
+
     public ConfiguracionSimulacion configuracion() { return configuracion; }
     public LocalDateTime reloj() { return reloj; }
     public String estado() { return estado; }
@@ -434,7 +468,9 @@ public final class MotorSimulacion {
     public List<Ciclo> ciclos() { return List.copyOf(ciclos); }
     public List<Evento> eventos() { return List.copyOf(eventos); }
     public List<Almacen> almacenes() { return List.copyOf(almacenes.values()); }
-    public List<Bloqueo> bloqueos() { return bloqueos; }
-    public List<Mantenimiento> mantenimientos() { return mantenimientos; }
+    public List<Bloqueo> bloqueos() { return List.copyOf(bloqueos); }
+    public List<Mantenimiento> mantenimientos() { return List.copyOf(mantenimientos); }
+    public List<Averia> averias() { return List.copyOf(averias); }
+    public FiltroIncidencias filtroIncidencias() { return filtroIncidencias; }
     public boolean esFinal() { return Set.of("FINALIZADA", "COLAPSADA", "DETENIDA", "ERROR").contains(estado); }
 }

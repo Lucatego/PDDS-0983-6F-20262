@@ -180,6 +180,47 @@ public class OrquestadorSimulacion {
         LOG.info("Pedido {} registrado en ejecución {}", pedido.id(), ejecucionId);
     }
 
+    /**
+     * Registra una avería manual en una unidad activa (B-06).
+     */
+    public synchronized void registrarAveria(pe.pucp.paqrap.estricto.modelo.Averia averia) {
+        validarMotorInicializado();
+        motor.registrarAveria(averia);
+        if (repositorio != null && ejecucionId != null) {
+            Long vehiculoId = vehiculosId.get(averia.vehiculo());
+            repositorio.registrarIncidencia(ejecucionId, "AVERIA", "MANUAL", "ACTIVA",
+                    vehiculoId, 1, averia.inicio(), averia.fin(), "Avería manual reportada");
+        }
+        LOG.info("Avería registrada en {} en ejecución {}", averia.vehiculo(), ejecucionId);
+    }
+
+    /**
+     * Registra un bloqueo manual en la retícula (B-06).
+     */
+    public synchronized void registrarBloqueo(pe.pucp.paqrap.estricto.modelo.Bloqueo bloqueo) {
+        validarMotorInicializado();
+        motor.registrarBloqueo(bloqueo);
+        if (repositorio != null && ejecucionId != null) {
+            repositorio.registrarIncidencia(ejecucionId, "BLOQUEO", "MANUAL", "ACTIVA",
+                    null, null, bloqueo.inicio(), bloqueo.fin(), "Bloqueo manual reportado");
+        }
+        LOG.info("Bloqueo registrado en ejecución {}", ejecucionId);
+    }
+
+    /**
+     * Registra un mantenimiento manual en una unidad (B-06).
+     */
+    public synchronized void registrarMantenimiento(pe.pucp.paqrap.estricto.modelo.Mantenimiento mantenimiento) {
+        validarMotorInicializado();
+        motor.registrarMantenimiento(mantenimiento);
+        if (repositorio != null && ejecucionId != null) {
+            Long vehiculoId = vehiculosId.get(mantenimiento.vehiculo());
+            repositorio.registrarIncidencia(ejecucionId, "MANTENIMIENTO", "MANUAL", "PROGRAMADA",
+                    vehiculoId, null, mantenimiento.inicio(), mantenimiento.fin(), "Mantenimiento manual programado");
+        }
+        LOG.info("Mantenimiento registrado en {} en ejecución {}", mantenimiento.vehiculo(), ejecucionId);
+    }
+
     public synchronized MotorSimulacion motor() {
         return motor;
     }

@@ -165,4 +165,25 @@ class MotorSimulacionTest {
         assertThat(pedido.entregada).isEqualTo(6);
         assertThat(fragmentado.tiempoRealMs()).isEqualTo(continuo.tiempoRealMs());
     }
+
+    @Test
+    void incidenciasControladasPorConfiguracionYRegistroDinamico() {
+        var configConIncidencias = new ConfiguracionSimulacion(ConfiguracionSimulacion.Escenario.SIMULACION_5D,
+                INICIO, Map.of(TipoVehiculo.TA, 1, TipoVehiculo.TM, 0, TipoVehiculo.TB, 0),
+                Map.of("NOROESTE", 1000, "ESTE", 1000), 10, 4, 20262,
+                new ParametrosOperacion(60, false, 480, 420, 60, 420, 60, 4, 50, 1000000,
+                        Map.of(TipoVehiculo.TA, 40.0, TipoVehiculo.TM, 25.0, TipoVehiculo.TB, 12.0)),
+                true, true, 0.5, false);
+
+        var motorIncidencias = new MotorSimulacion(configConIncidencias, List.of(), ALMACENES, List.of(), List.of());
+        assertThat(motorIncidencias.filtroIncidencias().considerarIncidencias()).isTrue();
+
+        var averia = new pe.pucp.paqrap.estricto.modelo.Averia("TA01", INICIO, INICIO.plusHours(2));
+        motorIncidencias.registrarAveria(averia);
+        assertThat(motorIncidencias.averias()).containsExactly(averia);
+        assertThat(motorIncidencias.eventos()).anyMatch(e -> e.tipo().equals("AVERIA_REGISTRADA"));
+
+        var motorSinIncidencias = motor(List.of());
+        assertThat(motorSinIncidencias.filtroIncidencias().considerarIncidencias()).isFalse();
+    }
 }

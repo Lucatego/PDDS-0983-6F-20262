@@ -332,6 +332,23 @@ public class RepositorioSimulacion {
                 pedidoEjecucionId, rutaId, cicloId, observacion);
     }
 
+    /**
+     * Persiste una incidencia reportada (B-06).
+     */
+    @Transactional
+    public void registrarIncidencia(long ejecucionId, String tipo, String origen, String estado,
+            Long vehiculoId, Integer tipoAveria, LocalDateTime fechaInicio, LocalDateTime fechaFin,
+            String descripcion) {
+        ejecutar("""
+                INSERT INTO incidencia (
+                    ejecucion_id, tipo, origen, estado, vehiculo_id, tipo_averia,
+                    fecha_inicio, fecha_fin, descripcion, fecha_real_registro
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, CURRENT_TIMESTAMP)
+                """,
+                ejecucionId, tipo, origen, estado, vehiculoId, tipoAveria,
+                fechaInicio, fechaFin, descripcion);
+    }
+
     private static boolean estaEnRiesgo(Pedido p) {
         double distancia = NODO_CENTRAL.manhattan(p.ubicacion());
         return (distancia / 40.0) > p.plazoHoras();

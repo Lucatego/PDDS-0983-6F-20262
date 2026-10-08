@@ -83,7 +83,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (41 tablas; seguridad postergada) y `V2__datos_iniciales.sql` (catálogos §7). Verificadas con Flyway en PostgreSQL 18.4 local; activación explícita y revisión antes del RDS | M-05 | 🔄 validado localmente; pendiente revisión/aplicación al RDS |
 | B-04 | back-datos | Servicio JPA de carga de ventas, bloqueos, mantenimiento y averías; códigos por línea, reintentos idempotentes y errores por línea. Pruebas locales en verde. API queda en B-08; rendimiento con archivos reales en RDS por medir | B-03 | 🔄 implementado y probado localmente; validación en entorno objetivo pendiente |
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ✅ orquestador y persistencia de ciclos/rutas completados (`OrquestadorSimulacion`, `RepositorioSimulacion`); 13 pruebas de simulación en verde |
-| B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ⬜ |
+| B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ configuración por ejecución persistida y expuesta; `FiltroIncidencias` entrega al planificador solo incidencias activas sin acoplar Tabu Search; 18 pruebas de simulación en verde |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ⬜ |
 | B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | ⬜ |
 | B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ⬜ |
@@ -130,6 +130,10 @@ Falta repetir con el JDK 25 del proyecto. No se modificó el RDS ni se incorpora
 El 07/10/2026 se completó y validó B-05: `OrquestadorSimulacion` coordina el ciclo de vida del motor y Tabu Search,
 mientras `RepositorioSimulacion` persiste ciclos, rutas, paradas, partes de pedidos y movimientos de stock.
 Se añadieron 3 pruebas unitarias aisladas en `OrquestadorSimulacionTest` (todas en verde; 45 pruebas aprobadas en el reactor).
+El 07/10/2026 se completó y validó B-06: consideración de incidencias controlada por configuración por ejecución
+(`ConfiguracionSimulacion`), persistida en `configuracion_ejecucion` y leída en `LectorEjecucion`. `FiltroIncidencias`
+entrega a `EstadoOperacion` únicamente las incidencias activas en el instante/ventana, manteniendo Tabu Search desacoplado.
+5 pruebas nuevas agregadas (4 en `FiltroIncidenciasTest` y 1 en `MotorSimulacionTest`), 50 pruebas aprobadas en total sin fallos.
 
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|
