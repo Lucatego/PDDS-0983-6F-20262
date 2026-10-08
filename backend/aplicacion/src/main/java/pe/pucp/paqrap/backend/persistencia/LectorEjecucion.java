@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion;
 import pe.pucp.paqrap.backend.simulacion.PreparacionSimulacion;
+import pe.pucp.paqrap.backend.simulacion.ReglaAveria;
 import pe.pucp.paqrap.estricto.modelo.*;
 import pe.pucp.paqrap.tabu.ConfiguracionTabu;
 
@@ -46,7 +47,7 @@ public class LectorEjecucion {
                 SELECT c.sa_minutos,c.aceleracion_reloj,c.servicio_minutos,c.plazo_incluye_servicio,
                     c.turno_minutos,t.minuto_inicio,c.descanso_desde_min,c.descanso_hasta_min,c.descanso_minutos,
                     c.tamanio_parte,c.costo_fijo_vehiculo,c.penalizacion_paquete_pendiente,
-                    c.averias_aleatorias,c.tasa_averias_dia,c.trasvase_habilitado
+                    c.considerar_incidencias,c.averias_aleatorias,c.tasa_averias_dia,c.trasvase_habilitado
                 FROM configuracion_ejecucion c JOIN turno_ejecucion t ON t.ejecucion_id=c.ejecucion_id
                 WHERE c.ejecucion_id=?1 AND t.numero=1
                 """, id);
@@ -75,12 +76,13 @@ public class LectorEjecucion {
         var operacion = new ParametrosOperacion(entero(opciones[2]), (Boolean) opciones[3], entero(opciones[4]),
                 entero(opciones[5]), entero(opciones[6]), entero(opciones[7]), entero(opciones[8]),
                 entero(opciones[9]), decimal(opciones[10]), decimal(opciones[11]), velocidades);
-        boolean averiasAleatorias = (Boolean) opciones[12];
-        double tasaAverias = decimal(opciones[13]);
-        boolean trasvase = (Boolean) opciones[14];
+        boolean considerarIncidencias = (Boolean) opciones[12];
+        boolean averiasAleatorias = (Boolean) opciones[13];
+        double tasaAverias = decimal(opciones[14]);
+        boolean trasvase = (Boolean) opciones[15];
         var configuracion = new ConfiguracionSimulacion(escenario, inicio, flota, capacidades,
                 entero(opciones[0]), decimal(opciones[1]), semilla, operacion,
-                averiasAleatorias, averiasAleatorias, tasaAverias, trasvase);
+                considerarIncidencias, averiasAleatorias, tasaAverias, trasvase);
         Object[] tabu = unica("""
                 SELECT max_iteraciones,tenencia_tabu,sin_mejora_max,candidatos_por_iteracion,presupuesto_ms,algoritmo
                 FROM configuracion_algoritmo WHERE ejecucion_id=?1
@@ -93,6 +95,7 @@ public class LectorEjecucion {
         var archivos = new LinkedHashMap<Long, String>();
         var bloqueos = new ArrayList<Bloqueo>();
         var mantenimientos = new ArrayList<Mantenimiento>();
+        var averias = new ArrayList<Averia>();
         // Dia a dia no importa demanda historica; sus pedidos ingresaran por registro manual/lote.
         if (escenario != ConfiguracionSimulacion.Escenario.DIA_A_DIA) {
             LocalDateTime fin = configuracion.finHorizonte();
@@ -136,9 +139,26 @@ public class LectorEjecucion {
                 mantenimientos.add(new Mantenimiento((String) fila[0], dia.atStartOfDay(), dia.plusDays(1).atStartOfDay()));
                 archivos.put(((Number) fila[2]).longValue(), fila[3].toString().trim());
             }
+            for (Object[] fila : filas("""
+                    SELECT v.codigo,COALESCE(i.fecha_inicio,i.fecha_programada),i.tipo_averia,
+                        t.regla_fin,t.minutos_inoperativa,t.dias_minimos,t.minuto_inicio_turno_retorno
+                    FROM incidencia i JOIN vehiculo v ON v.id=i.vehiculo_id
+                    JOIN cat_tipo_averia t ON t.tipo=i.tipo_averia
+                    WHERE i.ejecucion_id=?1 AND i.tipo='AVERIA'
+                      AND i.estado IN ('PROGRAMADA','ACTIVA')
+                      AND COALESCE(i.fecha_inicio,i.fecha_programada) IS NOT NULL
+                    ORDER BY COALESCE(i.fecha_inicio,i.fecha_programada),i.id
+                    """, id)) {
+                LocalDateTime fechaInicioAveria = fecha(fila[1]);
+                short tipo = ((Number) fila[2]).shortValue();
+                LocalDateTime fechaFinAveria = ReglaAveria.calcularFin((String) fila[3], fechaInicioAveria,
+                        fila[4] == null ? null : entero(fila[4]), fila[5] == null ? null : entero(fila[5]),
+                        fila[6] == null ? null : entero(fila[6]), operacion.turnoMinutos(), operacion.inicioTurnoMinuto());
+                averias.add(new Averia((String) fila[0], fechaInicioAveria, fechaFinAveria, tipo));
+            }
         }
         return new PreparacionSimulacion(id, configuracion, algoritmo, pedidos, almacenes, bloqueos,
-                mantenimientos, idsPedidos, archivos);
+                mantenimientos, averias, idsPedidos, archivos);
     }
 
     private Object[] unica(String sql, Object... parametros) {

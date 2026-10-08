@@ -46,14 +46,14 @@ public class RepositorioConfiguracionEjecucion {
                 INSERT INTO configuracion_ejecucion (ejecucion_id,sa_minutos,aceleracion_reloj,duracion_dias,
                     servicio_minutos,plazo_incluye_servicio,turno_minutos,descanso_desde_min,descanso_hasta_min,
                     descanso_minutos,tamanio_parte,costo_fijo_vehiculo,penalizacion_paquete_pendiente,
-                    averias_aleatorias,tasa_averias_dia,trasvase_habilitado)
-                VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)
+                    considerar_incidencias,averias_aleatorias,tasa_averias_dia,trasvase_habilitado)
+                VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
                 """, id, configuracion.saMinutos(), configuracion.minutosPorSegundo(),
                 configuracion.finHorizonte() == null ? null : 5,
                 operacion.servicioMinutos(), operacion.plazoIncluyeServicio(), operacion.turnoMinutos(),
                 operacion.descansoDesde(), operacion.descansoHasta(), operacion.descansoMinutos(),
                 operacion.tamanioParte(), operacion.costoFijoVehiculo(), operacion.penalizacionPaquetePendiente(),
-                configuracion.averiasAleatorias() || configuracion.considerarIncidencias(),
+                configuracion.considerarIncidencias(), configuracion.averiasAleatorias(),
                 configuracion.tasaAveriasDia(), configuracion.trasvaseHabilitado());
         ejecutar("""
                 INSERT INTO configuracion_algoritmo (ejecucion_id,max_iteraciones,sin_mejora_max,presupuesto_ms,

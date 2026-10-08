@@ -98,6 +98,11 @@ public final class MotorSimulacion {
 
     public MotorSimulacion(ConfiguracionSimulacion configuracion, List<Pedido> demanda, List<Almacen> almacenes,
             List<Bloqueo> bloqueos, List<Mantenimiento> mantenimientos) {
+        this(configuracion, demanda, almacenes, bloqueos, mantenimientos, List.of());
+    }
+
+    public MotorSimulacion(ConfiguracionSimulacion configuracion, List<Pedido> demanda, List<Almacen> almacenes,
+            List<Bloqueo> bloqueos, List<Mantenimiento> mantenimientos, List<Averia> averiasProgramadas) {
         this.configuracion = configuracion;
         this.filtroIncidencias = new FiltroIncidencias(configuracion.considerarIncidencias());
         this.demanda = new ArrayList<>(demanda.stream().filter(p -> !p.fechaRegistro().isBefore(configuracion.inicio()))
@@ -109,6 +114,7 @@ public final class MotorSimulacion {
         }
         if (bloqueos != null) this.bloqueos.addAll(bloqueos);
         if (mantenimientos != null) this.mantenimientos.addAll(mantenimientos);
+        if (averiasProgramadas != null) this.averias.addAll(averiasProgramadas);
         this.almacenes = new LinkedHashMap<>();
         for (var almacen : almacenes) {
             if (!almacen.ilimitado() && almacen.stock() > configuracion.capacidades().get(almacen.id())) {
