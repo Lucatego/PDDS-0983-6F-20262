@@ -25,6 +25,77 @@ class CargaPostgresqlTest {
     @Autowired private ServicioCargaArchivos servicio;
     @Autowired private EntityManager entidad;
     @Autowired private RepositorioConfiguracionEjecucion configuracionEjecucion;
+    @Autowired private LectorEjecucion lectorEjecucion;
+
+    @Test
+    void preparaMotorDesdeDatosPersistidosSinIniciarNiVincularArchivos() {
+        var carga = servicio.cargar(TipoArchivo.VENTAS, "ventas202609",
+                "01d06h59m:28,14,c1,1,4\n01d07h00m:28,14,c2,6,4\n06d07h00m:28,14,c3,1,4", null);
+        long id = configuracionEjecucion.crear(configuracionPrueba(),
+                new pe.pucp.paqrap.tabu.ConfiguracionTabu(1, 7, 30, 2, 0, 20262));
+        // No sustituir un stock inicial explicitamente configurado por la capacidad maxima.
+        entidad.createNativeQuery("UPDATE almacen_ejecucion SET stock_inicial=50,stock_actual=50 "
+                + "WHERE ejecucion_id=?1 AND almacen_id='ESTE'").setParameter(1, id).executeUpdate();
+        var entrada = lectorEjecucion.preparar(id);
+        assertThat(entrada.pedidos()).extracting(pe.pucp.paqrap.estricto.modelo.Pedido::id)
+                .containsExactly("V202609-L00002");
+        assertThat(entrada.archivos()).containsKey(carga.archivoId());
+        assertThat(entrada.pedidosPersistidos()).containsKey("V202609-L00002");
+        assertThat(entrada.configuracion().operacion().plazoIncluyeServicio()).isFalse();
+        assertThat(entrada.algoritmo().semilla()).isEqualTo(20262);
+        var motor = entrada.nuevoMotor();
+        assertThat(motor.estado()).isEqualTo("CONFIGURADA");
+        assertThat(motor.almacenes().stream().filter(a -> a.id().equals("ESTE")).findFirst().orElseThrow().stock())
+                .isEqualTo(50);
+        motor.iniciar();
+        motor.avanzar(20, entrada.nuevoPlanificador());
+        assertThat(motor.pedidos().get("V202609-L00002").entregada).isEqualTo(6);
+        assertThat(numero("SELECT count(*) FROM ejecucion WHERE estado='CONFIGURADA'")).isEqualTo(1);
+        assertThat(numero("SELECT count(*) FROM ejecucion_archivo")).isZero();
+        assertThat(lectorEjecucion.preparar(id)).isEqualTo(entrada);
+    }
+
+    @Test
+    void preparaRestriccionesFuturasConVerticesOrdenadosYFiltraFlotaDeMantenimiento() {
+        servicio.cargar(TipoArchivo.BLOQUEOS, "bloqueo.2609.txt",
+                "01d06h00m-01d07h00m:1,1,2,1\n06d08h00m-06d09h00m:3,3,4,3,4,4", null);
+        servicio.cargar(TipoArchivo.MANTENIMIENTO, "mant.preventivo.09.10.txt",
+                "20260901:TA01\n20260901:TB99", null);
+        long id = configuracionEjecucion.crear(configuracionPrueba(),
+                new pe.pucp.paqrap.tabu.ConfiguracionTabu(1, 7, 30, 2, 0, 20262));
+        var entrada = lectorEjecucion.preparar(id);
+        assertThat(entrada.bloqueos()).hasSize(1);
+        assertThat(entrada.bloqueos().getFirst().puntos()).containsExactly(
+                new pe.pucp.paqrap.estricto.modelo.Nodo(3, 3),
+                new pe.pucp.paqrap.estricto.modelo.Nodo(4, 3),
+                new pe.pucp.paqrap.estricto.modelo.Nodo(4, 4));
+        assertThat(entrada.mantenimientos()).isNotEmpty().allMatch(m -> m.vehiculo().equals("TA01"));
+        assertThat(entrada.mantenimientos().getFirst().fin())
+                .isEqualTo(java.time.LocalDate.of(2026, 9, 2).atStartOfDay());
+    }
+
+    @Test
+    void diaADiaNoConsumeDemandaHistoricaYRechazaPrepararEstadoNoConfigurado() {
+        servicio.cargar(TipoArchivo.VENTAS, "ventas202609", "01d07h00m:28,14,c1,1,4", null);
+        var base = configuracionPrueba();
+        var diaria = new pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion(
+                pe.pucp.paqrap.backend.simulacion.ConfiguracionSimulacion.Escenario.DIA_A_DIA,
+                base.inicio(), base.flota(), base.capacidades(), base.saMinutos(), base.aceleracion(),
+                base.semilla(), base.operacion());
+        long id = configuracionEjecucion.crear(diaria,
+                new pe.pucp.paqrap.tabu.ConfiguracionTabu(1, 7, 30, 2, 0, 20262));
+        var entrada = lectorEjecucion.preparar(id);
+        assertThat(entrada.pedidos()).isEmpty();
+        assertThat(entrada.archivos()).isEmpty();
+        assertThat(entrada.configuracion().aceleracion()).isEqualTo(0.0167);
+        var motor = entrada.nuevoMotor();
+        motor.iniciar();
+        assertThat(motor.estado()).isEqualTo("ESPERANDO_PEDIDO");
+        entidad.createNativeQuery("UPDATE ejecucion SET estado='PAUSADA' WHERE id=?1")
+                .setParameter(1, id).executeUpdate();
+        assertThatThrownBy(() -> lectorEjecucion.preparar(id))
+                .isInstanceOf(LectorEjecucion.PreparacionInvalidaException.class);
+    }
 
     @DynamicPropertySource
     static void configurar(DynamicPropertyRegistry registro) {

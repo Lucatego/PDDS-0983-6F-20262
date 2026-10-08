@@ -47,8 +47,8 @@ public class RepositorioConfiguracionEjecucion {
                     servicio_minutos,plazo_incluye_servicio,turno_minutos,descanso_desde_min,descanso_hasta_min,
                     descanso_minutos,tamanio_parte,costo_fijo_vehiculo,penalizacion_paquete_pendiente)
                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
-                """, id, configuracion.saMinutos(), configuracion.escenario() == ConfiguracionSimulacion.Escenario.DIA_A_DIA
-                        ? 1.0 : configuracion.aceleracion(), configuracion.finHorizonte() == null ? null : 5,
+                """, id, configuracion.saMinutos(), configuracion.minutosPorSegundo(),
+                configuracion.finHorizonte() == null ? null : 5,
                 operacion.servicioMinutos(), operacion.plazoIncluyeServicio(), operacion.turnoMinutos(),
                 operacion.descansoDesde(), operacion.descansoHasta(), operacion.descansoMinutos(),
                 operacion.tamanioParte(), operacion.costoFijoVehiculo(), operacion.penalizacionPaquetePendiente());

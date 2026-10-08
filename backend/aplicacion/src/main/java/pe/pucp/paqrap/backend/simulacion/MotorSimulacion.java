@@ -108,8 +108,10 @@ public final class MotorSimulacion {
         this.mantenimientos = List.copyOf(mantenimientos);
         this.almacenes = new LinkedHashMap<>();
         for (var almacen : almacenes) {
-            int capacidad = almacen.ilimitado() ? 0 : configuracion.capacidades().get(almacen.id());
-            this.almacenes.put(almacen.id(), new Almacen(almacen.id(), almacen.nodo(), capacidad, almacen.ilimitado()));
+            if (!almacen.ilimitado() && almacen.stock() > configuracion.capacidades().get(almacen.id())) {
+                throw new IllegalArgumentException("Stock inicial mayor que la capacidad");
+            }
+            this.almacenes.put(almacen.id(), almacen);
             reservas.put(almacen.id(), 0);
         }
         var central = this.almacenes.get("CENTRAL");

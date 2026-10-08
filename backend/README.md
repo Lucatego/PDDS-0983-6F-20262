@@ -189,6 +189,9 @@ comprometidas y partes estables. `RepositorioConfiguracionEjecucion` congela par
 flota, turnos, velocidades y stock inicial en una transacción. Sus pruebas usan exclusivamente
 PostgreSQL local optativo; la verificación del RDS corresponde al usuario. Pendientes: conectar
 la orquestación, persistir ciclos/rutas y exponer los controles REST/STOMP (no disponibles todavía).
+`LectorEjecucion.preparar(id)` reconstruye una entrada inmutable desde la configuración y los archivos
+maestros asociados, y crea motor/planificador por ejecución sin arrancar el reloj. La integración de
+esa lectura con PostgreSQL no se ejecutó en esta entrega; sigue pendiente por decisión del usuario.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|

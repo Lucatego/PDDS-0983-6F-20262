@@ -27,6 +27,9 @@ class ServicioPlanificacionTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pe.pucp.paqrap.backend.persistencia.RepositorioConfiguracionEjecucion configuracionEjecucion;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.pucp.paqrap.backend.persistencia.LectorEjecucion lectorEjecucion;
+
     private static final LocalDateTime INSTANTE = LocalDateTime.of(2026, 9, 1, 8, 0);
     private static final Nodo CENTRAL = new Nodo(27, 14);
 
