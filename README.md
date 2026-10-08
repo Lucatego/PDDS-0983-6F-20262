@@ -53,8 +53,33 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 ├── CLAUDE.md     Contexto consolidado del proyecto para asistentes de IA
 ├── TAREAS.md     Tablero de tareas y pendientes
 ├── FORMATO-DOCUMENTOS.md   Formato de los entregables .docx
+├── compose.yaml  Solución completa en contenedores (BD + backend + frontend)
 └── README.md
 ```
+
+## Ejecutar todo con Docker
+
+Requiere Docker con Compose v2.20 o superior. Desde la raíz del repositorio:
+
+```bash
+docker compose up -d --build
+```
+
+| Servicio | Imagen | Puerto en el equipo | Qué hace |
+|---|---|---|---|
+| `frontend` | `node:22` (compilación) → `nginx:1.28-alpine` | `80` (`PAQRAP_PUERTO_WEB`) | Sirve la GUI compilada con `VITE_DATA_SOURCE=server` y redirige `/api` y `/ws` al backend |
+| `backend` | `eclipse-temurin:25-jdk` (compilación) → `eclipse-temurin:25-jre` | `8080` (`PAQRAP_PUERTO_BACKEND`) | Spring Boot con Tabu Search; Flyway crea el esquema al arrancar |
+| `postgres` | `postgres:18` (de `backend/compose.yaml`) | `5433` | Base de datos local `paqrap` (usuario `paqrap`, clave `paqrap_local`, solo desarrollo) |
+
+- La GUI queda en `http://localhost` y, desde otros dispositivos de la red, en `http://<IP del equipo>`.
+- Todo corre en el equipo, sin servicios externos: el backend en contenedor usa siempre la BD local, nunca el RDS
+  ni `backend/.env`.
+- `docker compose logs -f backend` muestra los registros; `docker compose down` detiene conservando los datos y
+  `docker compose down -v` los borra (el esquema se vuelve a crear al levantar).
+- La imagen del backend se construye sin pruebas: ejecutarlas aparte con `./mvnw verify` en `backend/`.
+- Solo la BD, para desarrollar con `npm run dev` o el backend en el IDE: `docker compose up -d postgres`
+  (o `docker compose up -d` dentro de `backend/`). No levantar ambas variantes a la vez: comparten el nombre de
+  contenedor `paqrap-postgres`.
 
 ## Ejecutar el frontend
 
