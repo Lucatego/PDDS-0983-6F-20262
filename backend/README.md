@@ -234,8 +234,8 @@ las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el res
 incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
 requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
 le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
-maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`): 109 pruebas, 0 fallas y 14 omitidas
-(13 de PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
+maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`, 08/10/2026, tras el PR #5): 131 pruebas, 0 fallas y 16 omitidas
+(15 de PostgreSQL y 1 dataset externo opcional), con Java 21 (`-Dmaven.compiler.release=21`); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|

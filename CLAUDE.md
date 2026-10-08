@@ -25,6 +25,10 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   `FORMATO-DOCUMENTOS.md` (formato obligatorio de todos los `.docx`).
 - El agente `auditor` (solo lectura) revisa cada documento nuevo o actualizado contra los anteriores de
   `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
+- El agente `seguridad` (solo lectura, definido el 08/10/2026) revisa cada commit, rama o PR antes de subirlo: secretos
+  (API keys, tokens, contraseñas, credenciales en URLs), archivos que no deben publicarse y buenas prácticas en
+  `.gitignore`, `.dockerignore`, `Dockerfile`, `compose.yaml`, configuración y, a futuro, GitHub Actions. **No bloquea**:
+  sus hallazgos (`S-nn` en `TAREAS.md` §4) se consultan siempre con el usuario. Nunca reproduce un secreto en su informe.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
 - El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.1.0, 08/10/2026); es la fuente para el DDL.
@@ -220,7 +224,7 @@ Resueltas por el Q&A oficial:
   de inicio de la corrida (a corregir en el front si se mantiene el modo local).
 
 Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026) o abiertas:
-1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). DAS/estándar/IEN aún dicen Java 21.
+1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). El DAS 1.1 ya dice Java 25; la IEN v03 corrió con Java 21 (histórico).
 2. ✅ **Plazo y servicio** (DD-04): parámetro por ejecución, por defecto `false` (Q&A 11: basta llegar antes
    del límite). La experimentación (con `true`) no se rehace por ahora; `backend/application.yml` aún dice `true`.
 3. ✅ **Averías** (DD-05): reglas del Q&A en `cat_tipo_averia` (T1 2 h; T2 fin del turno siguiente; T3 primer turno
@@ -249,8 +253,10 @@ Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026)
    DD-26 revisada (base 3,0 min sim./s en 5D y Colapso, 5D ≈ 40 min; factor ×1/×2/×5/×10 en caliente, no persistido).
    Pendientes de backend: V2 aún siembra 4,0 (migración V4 o leer el parámetro de la BD) y decidir si el cambio de
    factor va a la bitácora (reutilizar `CAMBIO_VELOCIDAD` o tipo nuevo).
-20. **DAS desactualizado** (P-10): dice Java 21, deja abiertas las tecnologías (R-02) y su vista de despliegue no
-   tiene contenedores.
+20. ✅ **DAS** (P-10): versión 1.1 (08/10/2026) con Java 25, tecnologías fijadas (DA-10 cerrada), DA-11 contenedores,
+   vista de despliegue y estado al 08/10/2026. DA-07 (planificación asíncrona con presupuesto) sigue aprobada pero **no
+   implementada**: hoy el planificador corre síncrono en el hilo del reloj, que se congela mientras planifica. R-08: la
+   5D real dura ~40 min + la suma de los Ta y puede salir de los 30–60 min de LE058 (medir; priorizar DA-07).
 
 ## 9. Plan de trabajo actual
 
@@ -316,7 +322,7 @@ Estado al 08/10/2026 (detalle en `TAREAS.md` §3 y `backend/README.md`):
 - Contenedores listos (Paso 1f, P-07 cerrado): la imagen del backend corre con Java 25.0.4.
 - Pruebas (`./mvnw verify`) con Java 21 (`-Dmaven.compiler.release=21`): 131, 0 fallas, 16 omitidas (08/10/2026);
   falta repetirlas con JDK 25 (posible dentro de la imagen `eclipse-temurin:25-jdk`).
-Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-08, P-09, P-10 y A-02 (`TAREAS.md`).
+Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-08, P-09, P-11 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
 solución integrada `sol.integrada.sem08`.
@@ -353,7 +359,7 @@ solución integrada `sol.integrada.sem08`.
 | `14.ana.reglas.glosario.v01.md` | Reglas RN-* y glosario (**fuente de fórmulas**) |
 | `21.dis.selec.algoritmos.v03.md` | ISA: TS y ALNS, pseudocódigo, operadores |
 | `22.dis.experim.v03.md` | IEN: experimento TS vs ALNS, EstadoOperacion, función objetivo |
-| `23.dis.arquitectura.solucion.v01.md` | DAS: vistas, entidades, decisiones DA-01..10, riesgos |
+| `23.dis.arquitectura.solucion.v01.md` | DAS versión 1.1 (08/10/2026): vistas, despliegue en contenedores, decisiones DA-01..DA-11, riesgos R-01..R-08 |
 | `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.1.0 (44 tablas, DD-01..DD-32, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
 | `51.plan.proyecto.v01.md` | Plan, cronograma por semana, roles, estructura de repo |
 | `61.std.GUI.v01.md` | Estándar de interfaz (≈1,3 MB por imágenes) |
