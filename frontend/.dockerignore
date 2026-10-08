@@ -1,0 +1,9 @@
+# Fuera del contexto de la imagen del frontend: dependencias, salidas y variables locales.
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+Dockerfile
+.dockerignore
+*.log
