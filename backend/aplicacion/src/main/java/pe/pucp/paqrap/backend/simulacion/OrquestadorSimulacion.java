@@ -36,6 +36,7 @@ public class OrquestadorSimulacion {
     private Map<String, Long> codigosAPedidoEjecucionId = new LinkedHashMap<>();
     private Map<String, Long> vehiculosId = new LinkedHashMap<>();
     private int ultimoCicloPersistido = -1;
+    private int ultimoEventoPersistido;
 
     @Autowired
     public OrquestadorSimulacion(
@@ -78,6 +79,7 @@ public class OrquestadorSimulacion {
         this.motor = preparacion.nuevoMotor();
         this.planificador = preparacion.nuevoPlanificador();
         this.ultimoCicloPersistido = -1;
+        this.ultimoEventoPersistido = 0;
 
         if (repositorio != null) {
             this.codigosAPedidoEjecucionId = repositorio.obtenerMapeoPedidosEjecucion(id);
@@ -98,9 +100,11 @@ public class OrquestadorSimulacion {
             repositorio.inicializarEjecucion(ejecucionId, preparacion);
             this.codigosAPedidoEjecucionId = repositorio.obtenerMapeoPedidosEjecucion(ejecucionId);
             this.vehiculosId = repositorio.obtenerMapeoVehiculos(ejecucionId);
+            repositorio.persistirProgreso(ejecucionId, motor, codigosAPedidoEjecucionId, vehiculosId);
         } else if (repositorio != null && ejecucionId != null) {
             repositorio.persistirProgreso(ejecucionId, motor, codigosAPedidoEjecucionId, vehiculosId);
         }
+        persistirBitacoraYResumen();
         LOG.info("Ejecución {} iniciada/reanudada, estado: {}", ejecucionId, motor.estado());
     }
 
@@ -113,6 +117,7 @@ public class OrquestadorSimulacion {
         if (repositorio != null && ejecucionId != null) {
             repositorio.persistirProgreso(ejecucionId, motor, codigosAPedidoEjecucionId, vehiculosId);
         }
+        persistirBitacoraYResumen();
         LOG.info("Ejecución {} pausada", ejecucionId);
     }
 
@@ -125,6 +130,7 @@ public class OrquestadorSimulacion {
         if (repositorio != null && ejecucionId != null) {
             repositorio.persistirProgreso(ejecucionId, motor, codigosAPedidoEjecucionId, vehiculosId);
         }
+        persistirBitacoraYResumen();
         LOG.info("Ejecución {} detenida", ejecucionId);
     }
 
@@ -165,6 +171,7 @@ public class OrquestadorSimulacion {
             // Actualizar progreso general de pedidos, viajes y ejecución
             repositorio.persistirProgreso(ejecucionId, motor, codigosAPedidoEjecucionId, vehiculosId);
         }
+        persistirBitacoraYResumen();
     }
 
     /**
@@ -177,6 +184,7 @@ public class OrquestadorSimulacion {
             long pedidoEjecId = repositorio.registrarPedidoManual(ejecucionId, pedido);
             codigosAPedidoEjecucionId.put(pedido.id(), pedidoEjecId);
         }
+        persistirBitacoraYResumen();
         LOG.info("Pedido {} registrado en ejecución {}", pedido.id(), ejecucionId);
     }
 
@@ -189,8 +197,9 @@ public class OrquestadorSimulacion {
         if (repositorio != null && ejecucionId != null) {
             Long vehiculoId = vehiculosId.get(averia.vehiculo());
             repositorio.registrarIncidencia(ejecucionId, "AVERIA", "MANUAL", "ACTIVA",
-                    vehiculoId, 1, averia.inicio(), averia.fin(), "Avería manual reportada");
+                    vehiculoId, (int) averia.tipo(), averia.inicio(), averia.fin(), "Avería manual reportada");
         }
+        persistirBitacoraYResumen();
         LOG.info("Avería registrada en {} en ejecución {}", averia.vehiculo(), ejecucionId);
     }
 
@@ -204,6 +213,7 @@ public class OrquestadorSimulacion {
             repositorio.registrarIncidencia(ejecucionId, "BLOQUEO", "MANUAL", "ACTIVA",
                     null, null, bloqueo.inicio(), bloqueo.fin(), "Bloqueo manual reportado");
         }
+        persistirBitacoraYResumen();
         LOG.info("Bloqueo registrado en ejecución {}", ejecucionId);
     }
 
@@ -218,6 +228,7 @@ public class OrquestadorSimulacion {
             repositorio.registrarIncidencia(ejecucionId, "MANTENIMIENTO", "MANUAL", "PROGRAMADA",
                     vehiculoId, null, mantenimiento.inicio(), mantenimiento.fin(), "Mantenimiento manual programado");
         }
+        persistirBitacoraYResumen();
         LOG.info("Mantenimiento registrado en {} en ejecución {}", mantenimiento.vehiculo(), ejecucionId);
     }
 
@@ -250,5 +261,17 @@ public class OrquestadorSimulacion {
         if (motor == null) {
             throw new IllegalStateException("No hay una simulación preparada o configurada");
         }
+    }
+
+    /** Guarda solo los nuevos eventos y refresca el consolidado parcial/final (B-07). */
+    private void persistirBitacoraYResumen() {
+        if (repositorio == null || ejecucionId == null || motor == null) return;
+        var eventos = motor.eventos();
+        if (ultimoEventoPersistido < eventos.size()) {
+            repositorio.persistirEventos(ejecucionId, eventos.subList(ultimoEventoPersistido, eventos.size()),
+                    codigosAPedidoEjecucionId, vehiculosId);
+            ultimoEventoPersistido = eventos.size();
+        }
+        repositorio.persistirResumenEIndicadores(ejecucionId, motor, !motor.esFinal());
     }
 }

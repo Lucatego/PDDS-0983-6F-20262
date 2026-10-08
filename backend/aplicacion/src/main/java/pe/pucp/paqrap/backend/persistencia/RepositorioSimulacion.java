@@ -11,6 +11,7 @@ import java.util.Map;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import pe.pucp.paqrap.backend.simulacion.MotorSimulacion;
+import pe.pucp.paqrap.backend.simulacion.GeneradorResumen;
 import pe.pucp.paqrap.backend.simulacion.PreparacionSimulacion;
 import pe.pucp.paqrap.estricto.caminos.Camino;
 import pe.pucp.paqrap.estricto.caminos.PasoCamino;
@@ -347,6 +348,142 @@ public class RepositorioSimulacion {
                 """,
                 ejecucionId, tipo, origen, estado, vehiculoId, tipoAveria,
                 fechaInicio, fechaFin, descripcion);
+    }
+
+    /**
+     * Persiste los eventos generados por el motor en la bitácora (B-07, LE054).
+     */
+    @Transactional
+    public void persistirEventos(long ejecucionId, List<MotorSimulacion.Evento> eventos,
+            Map<String, Long> codigosAPedidoEjecucionId, Map<String, Long> vehiculosId) {
+        for (var ev : eventos) {
+            Long pedEjecId = ev.pedido() != null ? codigosAPedidoEjecucionId.get(ev.pedido()) : null;
+            Long vehId = ev.vehiculo() != null ? vehiculosId.get(ev.vehiculo()) : null;
+            String nivel = nivelDeEvento(ev.tipo());
+
+            ejecutar("""
+                    INSERT INTO evento (
+                        ejecucion_id, secuencia, fecha, fecha_real, tipo_evento, nivel, mensaje,
+                        pedido_ejecucion_id, vehiculo_id, almacen_id
+                    ) VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP, ?4, ?5, ?6, ?7, ?8, ?9)
+                    ON CONFLICT (ejecucion_id, secuencia) DO NOTHING
+                    """,
+                    ejecucionId, ev.secuencia(), ev.fecha(), ev.tipo(), nivel, ev.mensaje(),
+                    pedEjecId, vehId, ev.almacen());
+        }
+    }
+
+    /**
+     * Persiste el resumen de la ejecución y los indicadores por plazo (B-07, LE056/061-064).
+     */
+    @Transactional
+    public void persistirResumenEIndicadores(long ejecucionId, MotorSimulacion motor, boolean esParcial) {
+        var r = GeneradorResumen.generar(motor, esParcial);
+
+        ejecutar("""
+                INSERT INTO resumen_ejecucion (
+                    ejecucion_id, es_parcial, fecha_real_generacion, duracion_simulada_dias, duracion_real_ms,
+                    ciclos, ejecuciones_planificador, ta_total_ms, ta_promedio_ms, ta_max_ms,
+                    pedidos_totales, pedidos_entregados, pedidos_entregados_en_plazo, pedidos_no_cumplidos,
+                    pedidos_pendientes_cierre, pedidos_reprogramados, pedidos_incumplidos_reprogramados,
+                    cumplimiento_pct, incumplidos_reprogramacion_pct, paquetes_entregados,
+                    holgura_real_promedio_min, holgura_real_minima_min,
+                    tiempo_entrega_promedio_h, tiempo_entrega_minimo_h, tiempo_entrega_maximo_h,
+                    vehiculos_disponibles, vehiculos_utilizados, utilizacion_flota_pct, utilizacion_capacidad_pct,
+                    rutas_despachadas, distancia_total_km, tiempo_rutas_min, costo_total,
+                    incidencias_totales, bloqueos_totales, averias_totales, averias_tipo1, averias_tipo2, averias_tipo3,
+                    mantenimientos_totales, incidencias_activas_cierre
+                ) VALUES (
+                    ?1, ?2, CURRENT_TIMESTAMP, ?3, ?4,
+                    ?5, ?6, ?7, ?8, ?9,
+                    ?10, ?11, ?12, ?13,
+                    ?14, ?15, ?16,
+                    ?17, ?18, ?19,
+                    ?20, ?21, ?22, ?23, ?24,
+                    ?25, ?26, ?27, ?28,
+                    ?29, ?30, ?31, ?32, ?33, ?34,
+                    ?35, ?36, ?37, ?38, ?39, ?40
+                ) ON CONFLICT (ejecucion_id) DO UPDATE SET
+                    es_parcial = EXCLUDED.es_parcial,
+                    fecha_real_generacion = EXCLUDED.fecha_real_generacion,
+                    duracion_simulada_dias = EXCLUDED.duracion_simulada_dias,
+                    duracion_real_ms = EXCLUDED.duracion_real_ms,
+                    ciclos = EXCLUDED.ciclos,
+                    ejecuciones_planificador = EXCLUDED.ejecuciones_planificador,
+                    ta_total_ms = EXCLUDED.ta_total_ms,
+                    ta_promedio_ms = EXCLUDED.ta_promedio_ms,
+                    ta_max_ms = EXCLUDED.ta_max_ms,
+                    pedidos_totales = EXCLUDED.pedidos_totales,
+                    pedidos_entregados = EXCLUDED.pedidos_entregados,
+                    pedidos_entregados_en_plazo = EXCLUDED.pedidos_entregados_en_plazo,
+                    pedidos_no_cumplidos = EXCLUDED.pedidos_no_cumplidos,
+                    pedidos_pendientes_cierre = EXCLUDED.pedidos_pendientes_cierre,
+                    pedidos_reprogramados = EXCLUDED.pedidos_reprogramados,
+                    pedidos_incumplidos_reprogramados = EXCLUDED.pedidos_incumplidos_reprogramados,
+                    cumplimiento_pct = EXCLUDED.cumplimiento_pct,
+                    incumplidos_reprogramacion_pct = EXCLUDED.incumplidos_reprogramacion_pct,
+                    paquetes_entregados = EXCLUDED.paquetes_entregados,
+                    holgura_real_promedio_min = EXCLUDED.holgura_real_promedio_min,
+                    holgura_real_minima_min = EXCLUDED.holgura_real_minima_min,
+                    tiempo_entrega_promedio_h = EXCLUDED.tiempo_entrega_promedio_h,
+                    tiempo_entrega_minimo_h = EXCLUDED.tiempo_entrega_minimo_h,
+                    tiempo_entrega_maximo_h = EXCLUDED.tiempo_entrega_maximo_h,
+                    vehiculos_disponibles = EXCLUDED.vehiculos_disponibles,
+                    vehiculos_utilizados = EXCLUDED.vehiculos_utilizados,
+                    utilizacion_flota_pct = EXCLUDED.utilizacion_flota_pct,
+                    utilizacion_capacidad_pct = EXCLUDED.utilizacion_capacidad_pct,
+                    rutas_despachadas = EXCLUDED.rutas_despachadas,
+                    distancia_total_km = EXCLUDED.distancia_total_km,
+                    tiempo_rutas_min = EXCLUDED.tiempo_rutas_min,
+                    costo_total = EXCLUDED.costo_total,
+                    incidencias_totales = EXCLUDED.incidencias_totales,
+                    bloqueos_totales = EXCLUDED.bloqueos_totales,
+                    averias_totales = EXCLUDED.averias_totales,
+                    averias_tipo1 = EXCLUDED.averias_tipo1,
+                    averias_tipo2 = EXCLUDED.averias_tipo2,
+                    averias_tipo3 = EXCLUDED.averias_tipo3,
+                    mantenimientos_totales = EXCLUDED.mantenimientos_totales,
+                    incidencias_activas_cierre = EXCLUDED.incidencias_activas_cierre
+                """,
+                ejecucionId, r.esParcial(), r.duracionSimuladaDias(), r.duracionRealMs(),
+                r.ciclos(), r.ejecucionesPlanificador(), r.taTotalMs(), r.taPromedioMs(), r.taMaxMs(),
+                r.pedidosTotales(), r.pedidosEntregados(), r.pedidosEntregadosEnPlazo(), r.pedidosNoCumplidos(),
+                r.pedidosPendientesCierre(), r.pedidosReprogramados(), r.pedidosIncumplidosReprogramados(),
+                r.cumplimientoPct(), r.incumplidosReprogramacionPct(), r.paquetesEntregados(),
+                r.holguraRealPromedioMin(), r.holguraRealMinimaMin(),
+                r.tiempoEntregaPromedioH(), r.tiempoEntregaMinimoH(), r.tiempoEntregaMaximoH(),
+                r.vehiculosDisponibles(), r.vehiculosUtilizados(), r.utilizacionFlotaPct(), r.utilizacionCapacidadPct(),
+                r.rutasDespachadas(), r.distanciaTotalKm(), r.tiempoRutasMin(), r.costoTotal(),
+                r.incidenciasTotales(), r.bloqueosTotales(), r.averiasTotales(), r.averiasTipo1(), r.averiasTipo2(), r.averiasTipo3(),
+                r.mantenimientosTotales(), r.incidenciasActivasCierre());
+
+        for (var ind : r.indicadoresPlazo().values()) {
+            ejecutar("""
+                    INSERT INTO indicador_plazo (
+                        ejecucion_id, plazo_horas, pedidos_totales, pedidos_entregados, pedidos_en_plazo, en_plazo_pct
+                    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                    ON CONFLICT (ejecucion_id, plazo_horas) DO UPDATE SET
+                        pedidos_totales = EXCLUDED.pedidos_totales,
+                        pedidos_entregados = EXCLUDED.pedidos_entregados,
+                        pedidos_en_plazo = EXCLUDED.pedidos_en_plazo,
+                        en_plazo_pct = EXCLUDED.en_plazo_pct
+                    """,
+                    ejecucionId, ind.plazoHoras(), ind.pedidosTotales(), ind.pedidosEntregados(),
+                    ind.pedidosEnPlazo(), ind.enPlazoPct());
+        }
+    }
+
+    private static String nivelDeEvento(String tipo) {
+        return switch (tipo) {
+            case "EJECUCION_INICIADA", "EJECUCION_REANUDADA", "EJECUCION_FINALIZADA",
+                 "PEDIDO_ENTREGADO", "BLOQUEO_FINALIZADO", "AVERIA_RESUELTA", "MANTENIMIENTO_FINALIZADO" -> "EXITO";
+            case "EJECUCION_PAUSADA", "EJECUCION_DETENIDA", "ARCHIVO_RECHAZADO",
+                 "PEDIDO_RECHAZADO", "PEDIDO_EN_RIESGO", "RUTA_RECALCULADA",
+                 "PEDIDO_REPROGRAMADO", "REASIGNACION", "ALERTA_STOCK_BAJO",
+                 "BLOQUEO_ACTIVADO", "BLOQUEO_REGISTRADO", "AVERIA_TRASLADO_CENTRAL", "INCIDENCIA_DESCARTADA" -> "ADVERTENCIA";
+            case "COLAPSO", "PEDIDO_NO_CUMPLIDO", "AVERIA_REGISTRADA" -> "CRITICO";
+            default -> "INFORMATIVO";
+        };
     }
 
     private static boolean estaEnRiesgo(Pedido p) {

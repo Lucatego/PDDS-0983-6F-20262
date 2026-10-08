@@ -71,6 +71,10 @@ class OrquestadorSimulacionTest {
         assertThat(orquestador.estado()).isEqualTo("EN_CURSO");
         assertThat(orquestador.esActiva()).isTrue();
         verify(repositorio).inicializarEjecucion(100L, prep);
+        verify(repositorio, org.mockito.Mockito.atLeastOnce())
+                .persistirEventos(eq(100L), anyList(), any(), any());
+        verify(repositorio, org.mockito.Mockito.atLeastOnce())
+                .persistirResumenEIndicadores(eq(100L), any(), eq(true));
 
         orquestador.pausar();
         assertThat(orquestador.estado()).isEqualTo("PAUSADA");
@@ -95,6 +99,9 @@ class OrquestadorSimulacionTest {
         assertThat(orquestador.motor().ciclos()).isNotEmpty();
         verify(repositorio, org.mockito.Mockito.atLeastOnce()).persistirCicloYRutas(eq(100L), any(), anyList(), any(), any());
         verify(repositorio, org.mockito.Mockito.atLeastOnce()).persistirProgreso(eq(100L), eq(orquestador.motor()), any(), any());
+        verify(repositorio, org.mockito.Mockito.atLeastOnce()).persistirEventos(eq(100L), anyList(), any(), any());
+        verify(repositorio, org.mockito.Mockito.atLeastOnce())
+                .persistirResumenEIndicadores(eq(100L), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
