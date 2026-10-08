@@ -16,7 +16,14 @@ Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archi
 
 ## Base de datos
 
-Por ahora la base está en **AWS** (PostgreSQL en RDS); un contenedor local queda pendiente (P-07 de `TAREAS.md`).
+Hay dos formas de tener la base:
+
+- **Contenedor local (P-07).** `docker compose up -d` desde `backend/` levanta PostgreSQL 18 en `localhost:5433`
+  (base y usuario `paqrap`, clave `paqrap_local`; ver `compose.yaml`). Para la solución completa (BD + backend +
+  frontend) usar el `compose.yaml` de la raíz: ver «Ejecutar todo con Docker» en el `README.md` raíz. La imagen del
+  backend (`Dockerfile`) compila con el JDK 25 y corre con el JRE 25, con Flyway activado contra la BD del contenedor.
+- **AWS (RDS)**, compartida por el equipo; el esquema aún no se ha aplicado allí (lo verifica el usuario).
+
 Las credenciales van en `backend/.env`, que está en `.gitignore` y **no se versiona**:
 
 ```bash
@@ -227,8 +234,8 @@ las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el res
 incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
 requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
 le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
-maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`): 109 pruebas, 0 fallas y 14 omitidas
-(13 de PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
+maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`, 08/10/2026, tras el PR #5): 131 pruebas, 0 fallas y 16 omitidas
+(15 de PostgreSQL y 1 dataset externo opcional), con Java 21 (`-Dmaven.compiler.release=21`); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|

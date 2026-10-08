@@ -14,9 +14,11 @@ sus propias tareas. Contexto del proyecto en `CLAUDE.md`.
 | Backend · persistencia | Agente `back-datos` | DDL/migraciones, entidades, repositorios, carga de archivos a la BD | `feature/backend-persistencia` → `../wt-back-datos` |
 | Backend · simulación | Agente `back-sim` | Reloj, escenarios, ciclos de planificación, incidencias, indicadores | `feature/backend-simulacion` → `../wt-back-sim` |
 | Backend · API | Agente `back-api` | REST `/api` y STOMP `/ws` según el contrato del frontend | `feature/backend-api` → `../wt-back-api` |
+| Revisor de seguridad | Agente `seguridad` | Revisar cada commit, rama o PR antes de subirlo: secretos (API keys, tokens, contraseñas, credenciales en URLs), archivos que no deben publicarse y buenas prácticas en `.gitignore`, `.dockerignore`, `Dockerfile`, `compose.yaml`, configuración y, a futuro, workflows de GitHub Actions. **No bloquea:** informa al orquestador, que consulta cada hallazgo con el usuario; se registran en §4 con id `S-nn` | Sin rama: solo lectura |
 
 Definiciones de agente en `.claude/agents/`: `redactor` (Sonnet 5.5, esfuerzo medium), `backend` (Sonnet 5.5,
-esfuerzo high) y `auditor` (Sonnet 5.5, esfuerzo high, solo lectura; primera auditoría el 02/10/2026, P-06). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
+esfuerzo high), `auditor` (Sonnet 5.5, esfuerzo high, solo lectura; primera auditoría el 02/10/2026, P-06) y `seguridad`
+(Sonnet 5.5, esfuerzo high, solo lectura; definido el 08/10/2026, aún sin uso). La primera tanda (redactor y back-base) se lanzó antes con el modelo por defecto.
 
 Cada agente trabaja en su propio `git worktree` (carpeta hermana del repo) para no pisar archivos.
 Flujo: rama de trabajo → PR/merge a `develop` revisado por el orquestador → `main` en cada hito.
@@ -35,8 +37,9 @@ F0 ──► F3a Backend base ─┼──► F3c Simulación ────┼─
 - F3b, F3c y F3d esperan el modelo de datos **aprobado** (F1).
 - F2 y F3 corren en paralelo sobre el mismo `context/24.dis.estructura.datos.v01.md` (antes
   `docs/estructura-datos/modelo-datos.md`): el `.docx` no se edita a mano por separado.
-- D-01, D-02, D-04 y M-05 están cerradas y la conexión al RDS está verificada (02/10/2026): **B-03 es la siguiente
-  tarea**. Agentes en uso: **redactor** y **auditor**; el agente `backend` se lanza para B-03.
+- D-01, D-02, D-04 y M-05 están cerradas y la conexión al RDS está verificada (02/10/2026). Al 08/10/2026, B-03 a
+  B-07 y B-09 están en `main` (PR #4 y #5), B-08 sigue en curso y los contenedores están listos (P-07): **lo siguiente
+  es I-01/I-02** (integración con el front), el hallazgo de `POST /api/bloqueos` y alinear modelo y código (P-09).
 - **Corte vertical para la semana 08** (acordado el 02/10/2026): B-03 → B-04 → B-05 → B-07 (resumen) → B-08/B-09 →
   I-01/I-02, con el escenario 5D. B-06 (incidencias por tipo, trasvase) y el escenario Colapso completo van después.
 
@@ -63,16 +66,16 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | M-02 | Inventario de datos del backend y planificador | sección en `24.dis.estructura.datos.v01.md` | ✅ v1.0 aprobado |
 | M-03 | Modelo conceptual (entidades y relaciones) | diagrama ER | ✅ v1.0 aprobado |
 | M-04 | Modelo lógico: tablas, columnas, tipos, claves, restricciones, catálogos, índices | diccionario de datos | ✅ v1.0 aprobado |
-| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026); v1.0.1 el 02/10/2026 (corrección editorial, A-01) | ✅ |
+| M-05 | Aprobación del usuario (decisiones DD-01..DD-31, §11 de `24.dis.estructura.datos.v01.md`), condicionada a que se ajusten a las especificaciones y al negocio | versión 1.0 aprobada (30/09/2026); v1.0.1 el 02/10/2026 (corrección editorial, A-01); v1.1.0 el 08/10/2026 (DD-32 y DD-26 revisada, aprobadas por el usuario; P-09) | ✅ |
 
 ### F2 — Documento de estructura de datos (redactor)
 
 | Id | Tarea | Estado |
 |---|---|---|
-| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.0.1 |
-| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.0.1 |
-| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.0.1 |
-| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.0.1 (regenerado el 02/10/2026, 73 páginas) |
+| R-01 | Estructura del documento con formato del curso (portada, historial, índice, referencias) | ✅ v1.1.0 |
+| R-02 | Redactar a partir de `24.dis.estructura.datos.v01.md`; tablas del diccionario y diagrama ER | ✅ v1.1.0 |
+| R-03 | Trazabilidad entidad ↔ LE/CU/RN | ✅ v1.1.0 |
+| R-04 | Entregar `docs/estructura-datos/24.dis.estructura.datos.v01.docx` (salida local, no versionada) | ✅ v1.1.0 (regenerado el 08/10/2026 con un generador nuevo en `docs/estructura-datos/generar_docx.js`; 73 páginas en Word) |
 
 ### F3 — Backend
 
@@ -85,8 +88,8 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ✅ orquestador y persistencia de ciclos/rutas completados (`OrquestadorSimulacion`, `RepositorioSimulacion`); 13 pruebas de simulación en verde |
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ Averías tipadas, regla de indisponibilidad por tipo, indicador por ejecución separado de averías aleatorias, filtrado/replanificación de demanda no comprometida; pruebas unitarias verdes. V3 y carga RDS quedan pendientes de la verificación manual del usuario. |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ✅ eventos, consolidado parcial/final e indicadores por plazo persistidos idempotentemente; pruebas unitarias aisladas |
-| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre |
-| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | 🔄 implementado y probado localmente (rama `feature/backend-stomp`): endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
+| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre. 08/10 (PR #5): `POST /simulacion/velocidad`, pruebas HTTP de configuración y velocidad, pedido manual corregido, reiniciar sin 500 y cierre de ejecuciones huérfanas al arrancar; **abierto:** `POST /bloqueos` → 500 (ver §4) |
+| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ✅ en `main` (PR #5, 08/10/2026); conexión verificada desde la GUI en contenedor (`http://localhost`, «Servidor conectado · STOMP»). Detalle: endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
 
 ### F4 — Integración
 
@@ -142,6 +145,11 @@ pruebas de PostgreSQL local ni RDS.
 Suite del backend en Java 21 (`-Dmaven.compiler.release=21`): 88 ejecutadas, 0 fallas y 14 omitidas (13 de PostgreSQL
 y 1 por dataset externo opcional); `git diff --check` sin errores.
 
+**08/10/2026, estado de `main`:** PR #4 (`feature/backend-persistencia`, B-03..B-08) y PR #5
+(`feature/backend-velocidad`, B-09 y lo descrito abajo) fusionados. Suite con Java 21: 131 pruebas, 0 fallas, 16
+omitidas. Rama `feature/contenedores`: `compose.yaml` raíz con BD + backend (Java 25) + frontend (nginx); verificado
+con Flyway V1–V3 sobre la BD del contenedor y la GUI conectada por STOMP (P-07 cerrado).
+
 **Rama `feature/backend-velocidad` (08/10/2026), sobre B-08/B-09:**
 - `POST /api/pedidos` fallaba porque `RepositorioSimulacion.registrarPedidoManual` insertaba `pedido.fecha_real_registro`
   (no existe; la columna es `creado_en`, NOT NULL sin valor por defecto, por lo que el INSERT ahora la llena con
@@ -173,11 +181,27 @@ y 1 por dataset externo opcional); `git diff --check` sin errores.
 | P-04 | Correcciones en documentos del equipo | RN-INC-CAL-01 cita LE111/LE112 (no existen); LE091 dice «cliente» donde debería decir unidad; LE026 tiene 15 min por defecto (el modelo usa 10); LE049 y RN-INV-RES-01 tienen almacenes desactualizados; CU-05 copia a CU-04. | Próxima versión de LE/RN/CU |
 | P-05 | Ajustes del frontend al modelo | Ver §9.2 de `24.dis.estructura.datos.v01.md`: códigos de pedido, flota por defecto 10/15/12, duración de averías del Q&A, refrigerio del código, umbrales del semáforo desde el servidor, 5D en ~30 min, tiempos `##d` como día del mes. | Tarea I-01 |
 | P-06 | ✅ Cerrado (02/10/2026, commit 57f8564; auditoría: CONCUERDA CON OBSERVACIONES) · Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
-| P-07 | Contenedor local de PostgreSQL | Por ahora la BD está en AWS (credenciales en `backend/.env`). Más adelante crear un contenedor (p. ej. `compose.yaml` con PostgreSQL) para desarrollo y laboratorio, sin servicios externos (DAS). | Más adelante |
+| P-07 | ✅ Cerrado (08/10/2026) · Contenedores locales | `backend/compose.yaml` (Gandy): PostgreSQL 18 en el puerto 5433. `compose.yaml` de la raíz (rama `feature/contenedores`): BD + backend (`eclipse-temurin:25`, Flyway activado contra la BD local) + frontend (`nginx:1.28-alpine`, proxy de `/api` y `/ws`). Verificado: V1–V3 aplicadas, GUI en `http://localhost` conectada por STOMP. Uso en `README.md` («Ejecutar todo con Docker»). El RDS sigue sin modificarse. | Resuelto |
 | P-08 | Pruebas contra la base de datos | Las pruebas excluyen hoy DataSource, JPA y Flyway (`backend/aplicacion/src/test/resources/config/application.yml`). Definir cómo probar contra PostgreSQL (`@DataJpaTest`, Testcontainers u otra; consultar librerías) y quitar las exclusiones. | Cuando avise el usuario |
+| P-09 | Código vs. modelo de datos (08/10/2026) | Registrado en el modelo 1.1.0 (DD-32 `considerar_incidencias`; DD-26 revisada: base 3,0 min sim./s, factor ×1/×2/×5/×10 no persistido). **Queda para el backend:** (a) V2 siembra `cat_escenario.aceleracion_defecto` y `ACELERACION_5D` = 4,0: migración V4 a 3,0 o que el backend lea el parámetro de la BD (hoy usa `paqrap.tiempo-real.minutos-por-segundo-base`); (b) decidir si el cambio de factor va a la bitácora (LE054): reutilizar `CAMBIO_VELOCIDAD` con otro `detalle` o un tipo nuevo. Al resolverlo, quitar las notas «V2 aún siembra 4,0» del modelo y regenerar el `.docx` (A-04). | Próxima tarea de backend |
+| P-10 | ✅ Cerrado (08/10/2026) · DAS desactualizado | `context/23.dis.arquitectura.solucion.v01.md` sube a la versión 1.1: Java 25, tecnologías fijadas (DA-10 cerrada), DA-11 «Despliegue en contenedores con Docker Compose», vista de despliegue (Figura 5, Tabla 10), estado al 08/10/2026 y riesgos (R-02 cerrado, R-08 nuevo). `.docx` en `docs/arquitectura/` (23 páginas, Word), con generador y figuras junto a él. Auditoría: A-09..A-21. | Resuelto |
+| P-11 | DA-07 aprobada pero no implementada (R-08) | El planificador corre síncrono en el hilo `reloj-simulacion`, que se congela mientras planifica; `presupuesto-ms: 0`; las incidencias esperan al siguiente Sa. La 5D real dura ~40 min + la suma de los Ta y, con los Ta de la IEN v03 (TS 13,6 s de media), puede salir de los 30–60 min de LE058. Medir con una 5D real en el contenedor y decidir: presupuesto por llamada, planificación asíncrona, ajuste de la base de aceleración o del Sa. | Antes de la demo de 5D |
 | A-01 | ✅ Cerrado (02/10/2026) · Auditoría P-06 · OBSERVACIÓN | `24.dis.estructura.datos.v01`: el historial tenía dos filas con versión 1.0 (30/09 y 02/10). Decisión del usuario: la corrección editorial sube el documento a **1.0.1** (commit 20a110a; `.docx` regenerado, 73 páginas). Auditoría: CONCUERDA CON OBSERVACIONES. | Resuelto |
 | A-02 | Auditoría P-06 · OBSERVACIÓN | Índice del `.docx`: el número de página va con un tabulador literal en el texto y solo se verificó en LibreOffice (73 páginas). Revisar en Word; ver `FORMATO-DOCUMENTOS.md` §6. | Más adelante (no urgente) |
+| A-03 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · CRÍTICA | La trazabilidad de `considerar_incidencias` citaba LE071 (validación de archivos de bloqueo). Corregido a LE073, LE075, LE087 y LE099 (commit 9846d23). | Resuelto |
+| A-04 | Auditoría del modelo 1.1.0 · ALERTA | El modelo dice 3,0 y V2 siembra 4,0 hasta que exista V4: se sigue en P-09 (a). | Con P-09 |
+| A-05 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · ALERTA | `CLAUDE.md`, `TAREAS.md`, `README.md` y `FORMATO-DOCUMENTOS.md` citaban la v1.0.1 / DD-01..DD-31: actualizados a 1.1.0. | Resuelto |
+| A-06..A-08 | ✅ Cerrado (08/10/2026) · Auditoría del modelo 1.1.0 · OBSERVACIONES | «Activas» → «vigentes o que comienzan dentro de la ventana del ciclo» (DD-32, §6.4.2, §12); pendiente (b) de DD-26 precisado (`CAMBIO_VELOCIDAD` vs. tipo nuevo; `POST /simulacion/velocidad` ≠ `PUT /simulacion/velocidades`); `speedFactor`/`simMinPerSec` marcados como implementados en §9.2. | Resuelto |
+| A-09, A-10 | ✅ Cerrado (08/10/2026) · Auditoría del DAS 1.1 · CRÍTICAS | A-09: Ta de TS/ALNS tomados de la IEN v02; corregidos con la IEN v03 (13 598 / 37 062 ms; máximos 59,6 / 145,8 s; semillas 20262–20265). A-10: DA-07, §4.4, Tabla 3 y Figura 4 describían planificación asíncrona; por decisión del usuario DA-07 queda «Aprobada; no implementada», §4.4 separa lo construido de lo pendiente y se agrega R-08 (ver P-11). Commit 9d6e60d. | Resuelto |
+| A-11..A-21 | ✅ Cerrado (08/10/2026) · Auditoría del DAS 1.1 · ALERTAS y OBSERVACIONES | Inventario «Construido»; estados unificados (B-08 en curso, `POST /api/bloqueos` → 500, I-01/I-02 pendientes); exportación de resultados pendiente (LE056/LE061); referencias al modelo 1.1.0; documentos de la raíz actualizados (A-15); numeración AG/RNF de la LE v03 (decisión del usuario, A-16); pruebas con JDK 21; puertos de desarrollo 8080/5433; figuras 2–5 regeneradas; `TAREAS.md` como referencia y glosario ampliado. | Resuelto |
+| S-01 | **TODO · riesgo MEDIO** · Revisión de seguridad del 08/10/2026 (rama `feature/contenedores`) | Puertos publicados en todas las interfaces (0.0.0.0): `backend/compose.yaml` publica la BD en 5433 y `compose.yaml` raíz el backend en 8080 (además del 80). Cualquier equipo de la red local puede entrar al PostgreSQL con `paqrap` / `paqrap_local` (clave pública: el repositorio es público) y usar la API sin autenticación saltándose nginx. Con el compose raíz el 5433 no es necesario. Acción sugerida: publicar 5433 y 8080 como `127.0.0.1:…` (o no publicar el 5433 en el compose raíz) y dejar solo el 80 abierto a la red; avisar a Gandy, dueño de `backend/compose.yaml`. El usuario decidió dejarlo como está por ahora. | Pendiente (antes de usar el contenedor en una red compartida o en el laboratorio) |
+| S-02 | TODO · riesgo BAJO · Revisión de seguridad del 08/10/2026 | `frontend/nginx.conf` sin cabeceras de seguridad (`X-Content-Type-Options: nosniff`, `X-Frame-Options` o `frame-ancestors`, `Referrer-Policy`) ni `server_tokens off`. Los `add_header` de `location /assets/` y `/` anulan los del `server`: repetirlos en cada bloque o usar `include`. | Después |
+| S-03 | TODO · riesgo BAJO · Revisión de seguridad del 08/10/2026 | Imágenes con versión menor flotante y sin digest (`postgres:18`, `eclipse-temurin:25-jdk`/`25-jre`, `node:22-alpine`, `nginx:1.28-alpine`): builds no reproducibles. `backend/.mvn/wrapper/maven-wrapper.properties` sin `distributionSha256Sum`. Acción sugerida: fijar versión menor (digest para producción) y agregar el hash del wrapper. | Después |
+| S-04 | TODO · riesgo BAJO · Revisión de seguridad del 08/10/2026 | `frontend/Dockerfile` sin `USER` (el maestro de nginx corre como root; los workers no). Ningún servicio del compose usa `security_opt: [no-new-privileges:true]`, `cap_drop`, `read_only` ni límites de recursos. Una imagen `nginx-unprivileged` requeriría consulta (CLAUDE.md §1). | Después |
+| S-05 | TODO · riesgo BAJO · Revisión de seguridad del 08/10/2026 | `.dockerignore` de `backend/` y `frontend/` excluyen `.env`/`.env.*` solo en la raíz del contexto: usar `**/.env` y `**/.env.*` (p. ej. un `backend/aplicacion/.env` entraría a la etapa de compilación, no a la imagen final). Agregar al `.gitignore` raíz patrones preventivos: `*.pem`, `*.key`, `*.p12`, `*.jks`, `*.dump`, `*.backup`, `*.tfstate`, `id_rsa*`. | Después |
+| S-06 | TODO · riesgo BAJO (informativo) · Revisión de seguridad del 08/10/2026 | Los metadatos de los commits exponen correos personales e institucionales de los integrantes (no son secretos). No reescribir el historial; para commits futuros, valorar el correo `noreply` de GitHub. Además, los commits `4b3f207` y `881e9c1` versionaron un `.docx` de `docs/` (hoy ignorado; metadatos sin datos personales). | Decidir con el equipo |
 
+Los hallazgos del agente `seguridad` se registran con id `S-nn` (primera revisión: 08/10/2026, sin secretos expuestos; S-01..S-06 pendientes por decisión del usuario).
 Las alertas del agente `auditor` se registran en esta tabla con id `A-nn` (gravedad, documentos y secciones
 implicados, acción sugerida) y se cierran con el usuario.
 
@@ -190,6 +214,8 @@ implicados, acción sugerida) y se cierran con el usuario.
   `.gitignore` y no existe en los worktrees. Detalle en `CLAUDE.md` §1.
 - Después de que el redactor cree o actualice un documento, el orquestador lanza al `auditor` antes de darlo
   por cerrado; un veredicto `NO CONCUERDA` impide cerrar la tarea hasta resolver sus alertas críticas.
+- Antes de subir una rama o abrir un PR, el orquestador lanza al agente `seguridad` sobre los commits nuevos; sus
+  hallazgos `S-nn` no bloquean, pero se consultan con el usuario antes del push o del merge.
 - No adoptar librerías fuera de las decididas en D-02 sin consultar.
 - Commits con el formato `tipo: descripción` (`fix`, `feat`, `docs`, `refactor`, `test`; ver `CLAUDE.md` §10),
   en español, en imperativo, citando LE cuando aplique. Pruebas en verde antes de pedir merge.

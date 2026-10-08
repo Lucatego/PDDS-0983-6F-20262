@@ -37,10 +37,10 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 
 | Componente | Tecnología | Estado |
 |---|---|---|
-| Cliente web | React 19, TypeScript, Vite, Tailwind, Zustand, TanStack Query, ECharts, STOMP | Construido (`frontend/`) |
-| Servidor de aplicación | Spring Boot 4.1, Java 25, Maven; Spring MVC, STOMP, Spring Data JPA, Flyway | En construcción: base lista (`backend/`) |
+| Cliente web | React 19, TypeScript, Vite, Tailwind, Zustand, TanStack Query, ECharts, STOMP; nginx en contenedor | Construido (`frontend/`); se conecta al backend en contenedor, integración funcional pendiente (I-01/I-02) |
+| Servidor de aplicación | Spring Boot 4.1, Java 25, Maven; Spring MVC, STOMP, Spring Data JPA, Flyway | Carga de archivos, simulación, incidencias, resumen, REST y STOMP en `main`; faltan pruebas HTTP de cargas y la integración con el front (`backend/`) |
 | Planificador | Java, núcleo común + Tabu Search (ALNS solo en la experimentación) | Construido: módulo `backend/planificador`, copiado del repositorio de algoritmos (`DP1-G6F-Prototipo`) |
-| Base de datos | PostgreSQL (por ahora en AWS; credenciales en `backend/.env`) | Modelo v1.0.1; migraciones y carga preparadas en `feature/backend-persistencia`, pendientes de revisión y aplicación al RDS |
+| Base de datos | PostgreSQL 18: contenedor local (`compose.yaml`) o AWS RDS (credenciales en `backend/.env`) | Modelo v1.1.0; migraciones V1–V3 en `main`, aplicadas en el contenedor local; aplicación al RDS pendiente |
 
 ## Estructura del repositorio
 
@@ -53,8 +53,33 @@ Navegador (N dispositivos)            Servidor de aplicación                 Ba
 ├── CLAUDE.md     Contexto consolidado del proyecto para asistentes de IA
 ├── TAREAS.md     Tablero de tareas y pendientes
 ├── FORMATO-DOCUMENTOS.md   Formato de los entregables .docx
+├── compose.yaml  Solución completa en contenedores (BD + backend + frontend)
 └── README.md
 ```
+
+## Ejecutar todo con Docker
+
+Requiere Docker con Compose v2.20 o superior. Desde la raíz del repositorio:
+
+```bash
+docker compose up -d --build
+```
+
+| Servicio | Imagen | Puerto en el equipo | Qué hace |
+|---|---|---|---|
+| `frontend` | `node:22` (compilación) → `nginx:1.28-alpine` | `80` (`PAQRAP_PUERTO_WEB`) | Sirve la GUI compilada con `VITE_DATA_SOURCE=server` y redirige `/api` y `/ws` al backend |
+| `backend` | `eclipse-temurin:25-jdk` (compilación) → `eclipse-temurin:25-jre` | `8080` (`PAQRAP_PUERTO_BACKEND`) | Spring Boot con Tabu Search; Flyway crea el esquema al arrancar |
+| `postgres` | `postgres:18` (de `backend/compose.yaml`) | `5433` | Base de datos local `paqrap` (usuario `paqrap`, clave `paqrap_local`, solo desarrollo) |
+
+- La GUI queda en `http://localhost` y, desde otros dispositivos de la red, en `http://<IP del equipo>`.
+- Todo corre en el equipo, sin servicios externos: el backend en contenedor usa siempre la BD local, nunca el RDS
+  ni `backend/.env`.
+- `docker compose logs -f backend` muestra los registros; `docker compose down` detiene conservando los datos y
+  `docker compose down -v` los borra (el esquema se vuelve a crear al levantar).
+- La imagen del backend se construye sin pruebas: ejecutarlas aparte con `./mvnw verify` en `backend/`.
+- Solo la BD, para desarrollar con `npm run dev` o el backend en el IDE: `docker compose up -d postgres`
+  (o `docker compose up -d` dentro de `backend/`). No levantar ambas variantes a la vez: comparten el nombre de
+  contenedor `paqrap-postgres`.
 
 ## Ejecutar el frontend
 
@@ -92,10 +117,11 @@ tiempo real por STOMP en `/ws`. El contrato completo está en [`frontend/README.
 
 - [x] Análisis, arquitectura y experimentación numérica
 - [x] Cliente web con motor de simulación local
-- [x] Documento de diseño de estructura de datos (modelo v1.0.1 aprobado, PostgreSQL)
+- [x] Documento de diseño de estructura de datos (modelo v1.1.0 aprobado, PostgreSQL)
 - [x] Base del servidor Spring Boot con el planificador Tabu Search y la conexión a PostgreSQL
-- [ ] Base de datos: migraciones y servicio de carga implementados en la rama; revisión y aplicación al RDS pendientes
-- [ ] Simulación, incidencias, indicadores y API REST/STOMP
+- [x] Base de datos: migraciones V1–V3 y servicio de carga (aplicación al RDS pendiente)
+- [x] Simulación, incidencias, bitácora, resumen e indicadores; API REST y difusión STOMP (faltan pruebas HTTP de cargas)
+- [x] Contenedores de BD, backend y frontend con `docker compose`
 - [ ] Integración frontend ↔ backend (`VITE_DATA_SOURCE=server`)
 
 ## Licencia

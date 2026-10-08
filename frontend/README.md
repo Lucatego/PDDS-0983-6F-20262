@@ -45,6 +45,12 @@ npm run build      # genera dist/ para nginx
 
 La interfaz no cambia entre modos: solo conoce la interfaz `SimulationGateway` (`src/api/gateway.ts`).
 
+### Contenedor
+
+`Dockerfile` compila con Node 22 y `VITE_DATA_SOURCE=server` (argumento de construcción) y publica `dist/` con
+nginx; `nginx.conf` redirige `/api` y `/ws` al servicio `backend` y devuelve `index.html` en las rutas de la SPA.
+Se levanta junto con el backend y la BD desde el `compose.yaml` de la raíz (ver `README.md` raíz).
+
 ## Estructura
 
 ```

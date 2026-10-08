@@ -1,0 +1,11 @@
+# Fuera del contexto de la imagen del backend: salidas de compilación y credenciales locales.
+**/target/
+.env
+.env.*
+compose.yaml
+Dockerfile
+.dockerignore
+.idea/
+*.iml
+.vscode/
+*.log

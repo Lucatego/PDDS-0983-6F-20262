@@ -25,9 +25,13 @@ oficiales del curso (30/09/2026). **Si algo aquí contradice una fuente, verific
   `FORMATO-DOCUMENTOS.md` (formato obligatorio de todos los `.docx`).
 - El agente `auditor` (solo lectura) revisa cada documento nuevo o actualizado contra los anteriores de
   `context/`, considerando los cambios aprobados, y emite alertas si no concuerda; se registran en `TAREAS.md` §4.
+- El agente `seguridad` (solo lectura, definido el 08/10/2026) revisa cada commit, rama o PR antes de subirlo: secretos
+  (API keys, tokens, contraseñas, credenciales en URLs), archivos que no deben publicarse y buenas prácticas en
+  `.gitignore`, `.dockerignore`, `Dockerfile`, `compose.yaml`, configuración y, a futuro, GitHub Actions. **No bloquea**:
+  sus hallazgos (`S-nn` en `TAREAS.md` §4) se consultan siempre con el usuario. Nunca reproduce un secreto en su informe.
 - Los agentes leen de `context/`. Los worktrees no incluyen archivos ignorados: no asumir que algo de `docs/`
   está disponible; las salidas se escriben en el `docs/` del repositorio principal.
-- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.0.1); es la fuente para el DDL.
+- El modelo de datos vigente es `context/24.dis.estructura.datos.v01.md` (versión 1.1.0, 08/10/2026); es la fuente para el DDL.
   Su `.docx` se regenera con `docs/estructura-datos/generar_docx.js` (local, no versionado; ver `TAREAS.md` P-02).
 
 ## 2. El caso en una página
@@ -110,7 +114,10 @@ para los 3 escenarios; también pide la última planificación completa en el re
 
 - Cliente-servidor en capas. Cliente web (React) ↔ servidor Spring Boot (REST + canal en tiempo real)
   ↔ BD relacional **PostgreSQL** (DA-10 cerrada con DD-31/D-01). El DAS pide que todo corra en el laboratorio,
-  sin servicios externos; por ahora la BD de desarrollo está en AWS (contenedor local pendiente, P-07).
+  sin servicios externos. Contenedores (P-07, 08/10/2026): `compose.yaml` en la raíz levanta `postgres` (PostgreSQL
+  18, puerto 5433, de `backend/compose.yaml`), `backend` (JDK 25 → JRE 25, Flyway activado contra la BD local, 8080)
+  y `frontend` (Node 22 → `nginx:1.28-alpine`, puerto 80, proxy de `/api` y `/ws`). La BD compartida del equipo
+  sigue en AWS RDS (esquema aún no aplicado). El DAS (Java 21, sin contenedores) no refleja esto todavía (P-10).
 - Planificador = biblioteca Java detrás de `PlanificadorEstricto` (§6). El reloj, los ciclos (Sa), la
   carga de archivos y la persistencia son responsabilidad del backend, no de los algoritmos.
 - Experimentación (IEN v03, 40 corridas): **TS gana** en tiempo de planificación (Ta medio 13 598 ms
@@ -198,7 +205,9 @@ React 19 + TS 5.9 + Vite 8 + Tailwind 4 + Zustand 5 + TanStack Query 5 + ECharts
   del día 1**; coordenadas en km. Errores `{ "mensaje": "..." }`.
 - REST: `GET /simulacion/estado`, `GET /catalogos`, `POST /simulacion/{configuracion|iniciar|detener|reiniciar}`,
   `POST /pedidos`, `POST /pedidos/lote`, `POST /archivos/{ventas|bloqueos|averias|mantenimiento}` (texto
-  plano), `POST /averias {vehicleId,tipo}`, `POST /mantenimientos {vehicleId,horas}`, `POST /bloqueos {nodos,horas}`.
+  plano), `POST /averias {vehicleId,tipo}`, `POST /mantenimientos {vehicleId,horas}`, `POST /bloqueos {nodos,horas}`,
+  `POST /simulacion/velocidad {factor: 1|2|5|10}` (PR #5: solo 5D y Colapso; base 3 min sim./s, 5D ≈ 40 min).
+  `RunConfig.considerarIncidencias?` (por defecto `false`); `SimSnapshot.speedFactor?` y `simMinPerSec?`.
 - Tipos clave: `Vehicle{id,type,capacity,speed,costPerKm,home,state,pos,path,orderId,…}` con estados
   `idle|break|toClient|atClient|returning|broken|maintenance`; `Order{id(numérico),clientId,pos,qty,
   priority(h),createdAt,deadline,status(pending|assigned),reprogramado,enRiesgo,vehicleId,warehouseId}`;
@@ -215,7 +224,7 @@ Resueltas por el Q&A oficial:
   de inicio de la corrida (a corregir en el front si se mantiene el modo local).
 
 Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026) o abiertas:
-1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). DAS/estándar/IEN aún dicen Java 21.
+1. ✅ **Java 25** y **PostgreSQL** (DD-31; D-01 cerrada). El DAS 1.1 ya dice Java 25; la IEN v03 corrió con Java 21 (histórico).
 2. ✅ **Plazo y servicio** (DD-04): parámetro por ejecución, por defecto `false` (Q&A 11: basta llegar antes
    del límite). La experimentación (con `true`) no se rehace por ahora; `backend/application.yml` aún dice `true`.
 3. ✅ **Averías** (DD-05): reglas del Q&A en `cat_tipo_averia` (T1 2 h; T2 fin del turno siguiente; T3 primer turno
@@ -240,6 +249,14 @@ Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026)
 16. **Numeración AG**: la LE v03 difiere de Visión/DAS. Usar la LE v03 salvo indicación contraria.
 17. **CU-05** (Gestión de almacenes) es copia de CU-04 (corrección pendiente, P-04).
 18. **Estructura de repo**: el plan pide `/src/planificador`, `/src/visualizador`, `/data`…; el repo usa `frontend/`.
+19. ✅ **Código vs. modelo** (P-09): registrado en el modelo 1.1.0 (08/10/2026): DD-32 (`considerar_incidencias`, V3) y
+   DD-26 revisada (base 3,0 min sim./s en 5D y Colapso, 5D ≈ 40 min; factor ×1/×2/×5/×10 en caliente, no persistido).
+   Pendientes de backend: V2 aún siembra 4,0 (migración V4 o leer el parámetro de la BD) y decidir si el cambio de
+   factor va a la bitácora (reutilizar `CAMBIO_VELOCIDAD` o tipo nuevo).
+20. ✅ **DAS** (P-10): versión 1.1 (08/10/2026) con Java 25, tecnologías fijadas (DA-10 cerrada), DA-11 contenedores,
+   vista de despliegue y estado al 08/10/2026. DA-07 (planificación asíncrona con presupuesto) sigue aprobada pero **no
+   implementada**: hoy el planificador corre síncrono en el hilo del reloj, que se congela mientras planifica. R-08: la
+   5D real dura ~40 min + la suma de los Ta y puede salir de los 30–60 min de LE058 (medir; priorizar DA-07).
 
 ## 9. Plan de trabajo actual
 
@@ -247,7 +264,7 @@ Paso 1 ✅ Consolidar contexto (este archivo + `README.md`).
 Paso 1b ✅ Analizar el código Java de TS/ALNS y el Q&A oficial (§3, §6, §8).
 Paso 1c ✅ Backend base (`backend/`: Spring Boot 4.1.1, Java 25, módulo `planificador` con núcleo + TS) y
   modelo de datos v1.0 **aprobado** el 30/09/2026 (`context/24.dis.estructura.datos.v01.md`, 44 tablas,
-  DD-01..DD-31, PostgreSQL); v1.0.1 (02/10/2026) corrige el estado de aprobación. Tablero en `TAREAS.md`.
+  DD-01..DD-31, PostgreSQL); v1.0.1 (02/10/2026) corrige el estado de aprobación; v1.1.0 (08/10/2026) agrega DD-32 y revisa DD-26. Tablero en `TAREAS.md`.
 Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webmvc`), validation, websocket (STOMP),
   Spring Data JPA, Flyway (+ `flyway-database-postgresql`), driver PostgreSQL; pruebas con `starter-test` y
   `starter-webmvc-test`. BD en AWS con credenciales en `backend/.env` (plantilla `.env.example`); contenedor local
@@ -255,6 +272,9 @@ Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webm
 Paso 1e ✅ Conexión a PostgreSQL en AWS (RDS, PostgreSQL 18.3, base `paqrap`) verificada por el usuario el
   02/10/2026: el backend arranca contra la BD. Cada IP que se conecte necesita una regla de entrada en el
   security group del RDS (puerto 5432).
+Paso 1f ✅ Contenedores (P-07, 08/10/2026, rama `feature/contenedores`): `docker compose up -d --build` en la raíz
+  levanta BD + backend + frontend; verificado (V1–V3 aplicadas, GUI en `http://localhost` conectada por STOMP).
+  Docker Desktop 29 en el equipo del usuario.
 
 **Estrategia acordada (02/10/2026): corte vertical primero.** Para la semana 08 (`sol.integrada.sem08`) se
 prioriza un flujo completo y demostrable antes que la cobertura total de las LE:
@@ -269,24 +289,40 @@ previa e independiente por escenario, resultados exportables, última planificac
 laboratorio sin servicios externos, multi-dispositivo, reproducible, con pruebas y documentación concordante.
 
 Pasos siguientes (avance secuencial autorizado por el usuario el 04/10/2026; detalle en `TAREAS.md` §3):
-2. **B-03 (revisión pendiente)**: `V1__esquema.sql` (41 tablas sin seguridad, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
+2. **B-03 (en main; aplicación al RDS pendiente)**: `V1__esquema.sql` (41 tablas sin seguridad, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
    (catálogos de §7) con Flyway; agente `backend` en `feature/backend-persistencia`. El SQL lo revisa el usuario
    **antes** de aplicarlo al RDS compartido (una migración aplicada no se edita: las correcciones van en V3+).
    D-06 postergada por el usuario (04/10/2026): V1 contiene 41 tablas, sin `seg_*`; `registrado_por` nullable y sin FK.
-3. B-04 carga de archivos a la BD.
-4. B-05 reloj y escenarios (portar `SimulacionComparada`), luego B-07 resumen; B-06 incidencias después del corte.
-5. B-08 y B-09 API REST y difusión STOMP según el contrato del front.
-6. I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
+3. ✅ B-04 carga de archivos a la BD (en main; rendimiento con archivos reales por medir).
+4. ✅ B-05 reloj y escenarios, ✅ B-07 resumen, ✅ B-06 incidencias (en main).
+5. 🔄 B-08 API REST (en main, en curso) y ✅ B-09 difusión STOMP (en main, PR #5; falta probar con el front real).
+6. ⬜ I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
 Huecos del planificador a decidir en B-06: tipos de avería, trasvase, traslado al central, `rutasEnCurso` sin
 uso y un solo viaje por vehículo y ciclo (modificar el núcleo o compensar en el backend).
-Avance de la rama `feature/backend-persistencia` (04/10/2026): V1/V2 y servicio JPA de carga de archivos
-verificados en PostgreSQL 18.4 local: 55 pruebas aprobadas y 1 opcional omitida, usando Java 21 como comprobación
-de compatibilidad; repetir con Java 25. Flyway requiere `PAQRAP_MIGRACIONES_HABILITADAS=true` tras revisar el SQL.
-El RDS no se ha modificado. API de carga pendiente de B-08; seguridad postergada y sin bloqueo sobre B-03.
-El usuario verificará el RDS manualmente: no acceder a ese entorno. B-05 en curso: motor determinista
-con diez pruebas y configuración persistida con dos pruebas adicionales sobre PostgreSQL local.
-Falta conectar la orquestación y persistir ciclos/rutas antes del resumen y transporte REST/STOMP.
-Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md`).
+Estado al 08/10/2026 (detalle en `TAREAS.md` §3 y `backend/README.md`):
+- En `main` (PR #4, `feature/backend-persistencia`, fusionado por Yaser el 08/10/2026): V1/V2/V3 de Flyway
+  (41 tablas, sin `seg_*`), carga de archivos (B-04), motor y orquestador de simulación con persistencia de ciclos,
+  rutas, paradas, partes y stock (B-05), averías tipadas e incidencias por ejecución (B-06), bitácora, resumen e
+  indicadores (B-07) y `PlanificadorControlador` REST con prefijo `/api` (B-08, en curso: falta cobertura HTTP de
+  mutaciones/cargas y reconstruir conteos de archivos al reiniciar). Flyway requiere
+  `PAQRAP_MIGRACIONES_HABILITADAS=true`. El RDS no se ha modificado: lo verifica el usuario manualmente, no acceder.
+- En `main` (PR #5, `feature/backend-velocidad`, fusionado por Gandy el 08/10/2026): B-09 (STOMP `/ws`,
+  `SimSnapshot` a 5 Hz, `LogEvent`, `RelojSimulacion` que hace avanzar el orquestador); `backend/compose.yaml`
+  (PostgreSQL 18 en el puerto 5433, P-07); corrección del INSERT de pedidos manuales y `SimulacionPostgresqlTest`;
+  control de velocidad `POST /api/simulacion/velocidad {factor: 1|2|5|10}` sobre una base de 3 min simulados/s
+  (5D ≈ 40 min; Día a día en tiempo real, sin cambio), con `speedFactor`/`simMinPerSec` en el snapshot y selector
+  en el `Topbar` del front; `considerarIncidencias` opcional en `RunConfig`; reiniciar deja el sistema sin
+  configurar (antes 500); `RecuperadorEjecuciones` cierra como `ERROR` las ejecuciones activas al arrancar (LE060);
+  posición correcta de vehículos en espera y en parada.
+- Hallazgo abierto (Gandy, `TAREAS.md` §4): `POST /api/bloqueos` da 500 porque `registrarIncidencia` no inserta
+  antes en `bloqueo`/`bloqueo_vertice` (CHECK `incidencia_check2`) y usa `fecha_fin` en lugar de `fecha_fin_prevista`.
+  La avería manual no se ha probado contra la BD.
+- Frontend: solo cambió el control de velocidad (PR #5). I-01/I-02 (integración con `VITE_DATA_SOURCE=server`)
+  siguen pendientes.
+- Contenedores listos (Paso 1f, P-07 cerrado): la imagen del backend corre con Java 25.0.4.
+- Pruebas (`./mvnw verify`) con Java 21 (`-Dmaven.compiler.release=21`): 131, 0 fallas, 16 omitidas (08/10/2026);
+  falta repetirlas con JDK 25 (posible dentro de la imagen `eclipse-temurin:25-jdk`).
+Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-08, P-09, P-11 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
 solución integrada `sol.integrada.sem08`.
@@ -323,8 +359,8 @@ solución integrada `sol.integrada.sem08`.
 | `14.ana.reglas.glosario.v01.md` | Reglas RN-* y glosario (**fuente de fórmulas**) |
 | `21.dis.selec.algoritmos.v03.md` | ISA: TS y ALNS, pseudocódigo, operadores |
 | `22.dis.experim.v03.md` | IEN: experimento TS vs ALNS, EstadoOperacion, función objetivo |
-| `23.dis.arquitectura.solucion.v01.md` | DAS: vistas, entidades, decisiones DA-01..10, riesgos |
-| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.0.1 (44 tablas, DD-01..DD-31, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
+| `23.dis.arquitectura.solucion.v01.md` | DAS versión 1.1 (08/10/2026): vistas, despliegue en contenedores, decisiones DA-01..DA-11, riesgos R-01..R-08 |
+| `24.dis.estructura.datos.v01.md` | **Modelo de datos vigente**, versión 1.1.0 (44 tablas, DD-01..DD-32, PostgreSQL); su figura es `24.dis.estructura.datos.v01.diagrama-er.png` |
 | `51.plan.proyecto.v01.md` | Plan, cronograma por semana, roles, estructura de repo |
 | `61.std.GUI.v01.md` | Estándar de interfaz (≈1,3 MB por imágenes) |
 | `62.std.programacion.v01.md` | Estándar de programación y Git |
