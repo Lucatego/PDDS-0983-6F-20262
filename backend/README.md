@@ -4,7 +4,7 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP) permanece pendiente. No se ha aplicado el esquema al RDS.
+Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP en `/ws`) está implementado y probado localmente (ver «Tiempo real»). No se ha aplicado el esquema al RDS.
 
 ## Requisitos
 
@@ -96,11 +96,29 @@ backend/
         ├── api                  SaludControlador y PlanificadorControlador REST, ManejadorErrores
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
         ├── simulacion           ConfiguracionSimulacion, MotorSimulacion, orquestador y resumen (B-05/B-07)
+        ├── tiemporeal           STOMP /ws, difusión de SimSnapshot/LogEvent y pulso del reloj (B-09)
         └── persistencia         Carga de archivos y preparación/configuración persistida de ejecuciones
 ```
 
 El único algoritmo habilitado por la aplicación es Tabu Search (`TabuSearchPlanner`); las ejecuciones con otro
 algoritmo se rechazan al preparar el motor.
+
+### Tiempo real: STOMP en `/ws` (B-09)
+
+- Endpoint WebSocket nativo `ws://<host>:8080/ws` (sin SockJS, sin prefijo `/api`), como espera `stompGateway.ts`.
+  Broker simple en memoria para `/topic/**`, con heartbeat de 10 s.
+- `/topic/simulacion/estado`: `SimSnapshot` completo, armado por `PlanificadorControlador.estado()` (el mismo JSON de
+  `GET /api/simulacion/estado`). Se emite `frecuencia-hz` veces por segundo (5 por defecto, 1 a 10) mientras la ejecución
+  está `EN_CURSO` y de inmediato cuando cambia el estado, se reemplaza la ejecución, aparece un evento nuevo en una
+  ejecución que no corre, se ejecuta un `POST /api/**` exitoso o se suscribe un cliente. En pausa o detenida no hay
+  envío periódico.
+- `/topic/simulacion/eventos`: un `LogEvent` (`id`, `simMin`, `text`, `kind`) por cada evento de la bitácora del motor
+  (misma secuencia que persiste B-07). Los clientes que se conectan tarde no reciben los eventos anteriores.
+- `RelojSimulacion` invoca `OrquestadorSimulacion.avanzar` cada `periodo-reloj-ms` (200) con el tiempo real transcurrido
+  mientras la ejecución está en curso; las pausas no acumulan tiempo y el tiempo de planificación no se acredita.
+- Propiedades en `paqrap.tiempo-real.*` (`application.yml`): `difusion-habilitada`, `reloj-habilitado`, `frecuencia-hz`,
+  `periodo-sondeo-ms`, `periodo-reloj-ms`, `max-salto-reloj-ms` y `origenes-permitidos` (`*` por ahora: sin autenticación).
+- Las pruebas del canal (`CanalStompTest`) levantan un servidor real en puerto aleatorio sin base de datos.
 
 ### Migraciones y carga de archivos (B-03/B-04)
 
@@ -194,8 +212,8 @@ las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el res
 incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
 requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
 le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
-maestros asociados. B-08 REST está en curso; STOMP se implementará en B-09. Última suite: 88 pruebas ejecutadas,
-0 fallas y 14 omitidas (13 pruebas PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
+maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en `tiemporeal`. Última suite completa (`./mvnw -q verify`): 109 pruebas, 0 fallas y 14 omitidas
+(13 de PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|

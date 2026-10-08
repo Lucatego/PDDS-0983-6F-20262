@@ -86,7 +86,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ Averías tipadas, regla de indisponibilidad por tipo, indicador por ejecución separado de averías aleatorias, filtrado/replanificación de demanda no comprometida; pruebas unitarias verdes. V3 y carga RDS quedan pendientes de la verificación manual del usuario. |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ✅ eventos, consolidado parcial/final e indicadores por plazo persistidos idempotentemente; pruebas unitarias aisladas |
 | B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre |
-| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ⬜ |
+| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | 🔄 implementado y probado localmente (rama `feature/backend-stomp`): endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
 
 ### F4 — Integración
 
