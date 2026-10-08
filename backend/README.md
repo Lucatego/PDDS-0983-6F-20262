@@ -4,9 +4,7 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: base del backend (tareas B-01 y B-02 de `TAREAS.md`) con las librerías decididas (D-02) y la conexión a
-PostgreSQL (D-01). Todavía no hay esquema (migraciones, B-03), WebSocket configurado ni los endpoints del contrato
-del frontend.
+Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP) permanece pendiente. No se ha aplicado el esquema al RDS.
 
 ## Requisitos
 
@@ -30,13 +28,14 @@ cp .env.example .env    # desde backend/, y completar los tres valores
 | `PAQRAP_DB_URL` | `jdbc:postgresql://<host>:5432/<base>?sslmode=require` (RDS exige SSL) |
 | `PAQRAP_DB_USUARIO` | Usuario de la base |
 | `PAQRAP_DB_CLAVE` | Contraseña |
+| `PAQRAP_MIGRACIONES_HABILITADAS` | `false` por defecto; establecer `true` solo tras revisar el SQL |
 
 - `application.yml` importa el `.env` con `spring.config.import` desde el directorio de trabajo o su superior, así
   que funciona con `java -jar` desde `backend/` y con `spring-boot:run` (que corre en `backend/aplicacion`). Una
   variable de entorno del sistema con el mismo nombre tiene prioridad sobre el `.env`.
 - Sin credenciales la aplicación **no arranca** (error `'url' must start with "jdbc"` al crear el `dataSource`).
   El *security group* de RDS debe permitir la IP desde la que se conecta.
-- El esquema lo crea **Flyway** al arrancar con los scripts `aplicacion/src/main/resources/db/migration/V<n>__*.sql`
+- El esquema lo crea **Flyway**, cuando se habilita explícitamente, con `aplicacion/src/main/resources/db/migration/V<n>__*.sql`
   (tarea B-03, a partir de `context/24.dis.estructura.datos.v01.md`). Hibernate solo **valida** el esquema
   (`ddl-auto: validate`); no crea tablas.
 - Las pruebas excluyen por ahora el `DataSource`, JPA y Flyway (`aplicacion/src/test/resources/config/application.yml`);
@@ -94,13 +93,55 @@ backend/
     └── src/main/java/pe/pucp/paqrap/backend/
         ├── PaqRapAplicacion     Punto de entrada
         ├── configuracion        Propiedades del planificador, beans del TS, prefijo /api
-        ├── api                  SaludControlador (GET /api/salud), ManejadorErrores, RespuestaError
+        ├── api                  SaludControlador y PlanificadorControlador REST, ManejadorErrores
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
-        ├── simulacion           (vacío: reloj, escenarios y ciclos Sa; tareas B-05 a B-07)
-        └── persistencia         (vacío: entidades, repositorios y carga de archivos; tareas B-03 y B-04)
+        ├── simulacion           ConfiguracionSimulacion, MotorSimulacion, orquestador y resumen (B-05/B-07)
+        └── persistencia         Carga de archivos y preparación/configuración persistida de ejecuciones
 ```
 
-Los paquetes `simulacion` y `persistencia` solo tienen un `package-info.java` que describe lo que contendrán.
+El único algoritmo habilitado por la aplicación es Tabu Search (`TabuSearchPlanner`); las ejecuciones con otro
+algoritmo se rechazan al preparar el motor.
+
+### Migraciones y carga de archivos (B-03/B-04)
+
+- V1 crea las 41 tablas funcionales, FK, restricciones e índices del modelo v1.0.1. Seguridad queda postergada
+  (D-06): no hay tablas `seg_*`; `registrado_por` es nullable y sin FK. V2 carga catálogos y 31 parámetros. V3 agrega
+  `configuracion_ejecucion.considerar_incidencias` sin confluirlo con la generación aleatoria de averías.
+- `ServicioCargaArchivos.cargar(tipo, nombre, contenido, ejecucionId)` es el punto de entrada para B-08.
+  Ventas, bloqueos y mantenimiento son maestros (`ejecucionId = null`). Averías requiere una ejecución
+  `CONFIGURADA` y su flota ya creada; se registran como incidencias `PROGRAMADA`, con fecha relativa al inicio.
+- `POST /api/archivos/{tipo}` acepta `X-Nombre-Archivo` (o `?nombre=`) para el nombre del archivo. Si no se envía,
+  genera nombres a partir del periodo de inicio de la ejecución; para archivos que no correspondan a ese periodo se
+  debe enviar el nombre explícito.
+- Se aceptan los nombres oficiales y reales de ventas/bloqueos, BOM, comentarios y líneas vacías. Los códigos
+  usan la línea física. Errores por línea no impiden cargar las válidas; fallas de persistencia revierten todo.
+  Un nombre/periodo inválido se rechaza antes de crear la auditoría (no existe un periodo válido para registrarla).
+- El SHA-256 corresponde al contenido UTF-8 recibido. Recargarlo en el mismo periodo o ejecución devuelve el
+  mismo archivo y sus identificadores. Un contenido diferente para un periodo ocupado se rechaza; el reemplazo
+  explícito de archivos y su autorización según uso por ejecuciones quedan fuera de esta operación.
+- Mantenimiento se repite cada dos meses hasta 31/12/2029, siempre desde la fecha original. Si el día no existe
+  en el mes destino, se usa el último día del mes (`LocalDate.plusMonths`). El índice fecha/unidad evita duplicados.
+- No hay endpoints nuevos, simulador ni autenticación en este bloque. El mapeo JPA incluye `ArchivoCarga`;
+  los registros de carga se insertan con SQL parametrizado mediante JPA. Los demás agregados se mapearán según
+  los servicios de simulación que los necesiten.
+
+Pruebas PostgreSQL optativas, sin librerías nuevas: `CargaPostgresqlTest` acepta únicamente una instancia
+local desechable en `127.0.0.1:55483`, usuario `paqrap_prueba`, base `postgres`, sin contraseña. Crea un esquema
+aleatorio propio, aplica Flyway y revierte los datos de cada prueba; nunca utiliza el `.env` ni RDS. El esquema
+se conserva para diagnóstico y se desecha junto con la instancia. En PowerShell, desde `backend/`:
+
+```powershell
+$env:PAQRAP_PRUEBA_DB_URL = 'jdbc:postgresql://127.0.0.1:55483/postgres'
+.\mvnw.cmd test
+```
+
+Sin esa variable, las pruebas PostgreSQL se omiten; las unitarias y las existentes se ejecutan sin BD.
+Esta verificación local no sustituye P-08 (estrategia automatizada de BD/CI) ni acredita los 10 segundos de
+carga de LE003/009 en RDS: ese rendimiento debe medirse con archivos reales y la latencia del entorno.
+
+Verificación del 04/10/2026: 55 pruebas aprobadas y 1 opcional del planificador omitida (dataset externo no
+disponible); incluye 8 de integración con PostgreSQL 18.4 y Flyway. Por disponibilidad local se usó Java 21
+con `-Dmaven.compiler.release=21`; el POM sigue en Java 25 y falta repetir la verificación con ese JDK.
 
 ### Aplicación
 
@@ -145,6 +186,16 @@ Decididas en D-02 (`TAREAS.md`). Las versiones las gestiona Spring Boot 4.1.1 (S
 Cualquier otra librería se consulta antes de agregarla.
 
 ## Pruebas
+
+B-05 orquesta el reloj determinista y los ciclos Sa, y persiste ciclos, rutas y progreso. B-06 carga averías con tipo,
+aplica sus reglas de indisponibilidad y permite activar/desactivar incidencias por ejecución; bloqueos, averías y
+mantenimientos filtran la entrada de cada ciclo, de modo que se replanifica demanda aún no comprometida y se conservan
+las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el resumen parcial/final e indicadores por plazo,
+incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
+requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
+le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
+maestros asociados. B-08 REST está en curso; STOMP se implementará en B-09. Última suite: 88 pruebas ejecutadas,
+0 fallas y 14 omitidas (13 pruebas PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|

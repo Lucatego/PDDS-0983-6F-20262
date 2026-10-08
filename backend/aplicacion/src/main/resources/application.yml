@@ -23,6 +23,8 @@ spring:
     hibernate:
       ddl-auto: validate           # el esquema lo crean las migraciones de Flyway, no Hibernate
   flyway:
+    # Activar explicitamente solo despues de revisar el SQL (B-03).
+    enabled: ${PAQRAP_MIGRACIONES_HABILITADAS:false}
     locations: classpath:db/migration   # scripts V<n>__<descripcion>.sql (tarea B-03)
 
 paqrap:
