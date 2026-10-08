@@ -10,7 +10,7 @@ import pe.pucp.paqrap.backend.configuracion.PropiedadesTiempoReal;
 class RelojSimulacionTest {
 
     private static final PropiedadesTiempoReal PROPIEDADES =
-            new PropiedadesTiempoReal(true, true, 5, 50, 200, 2000, "*");
+            new PropiedadesTiempoReal(true, true, 5, 50, 200, 2000, 3.0, "*");
 
     private final AtomicLong nanos = new AtomicLong(1_000_000_000L);
 

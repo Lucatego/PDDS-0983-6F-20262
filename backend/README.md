@@ -117,7 +117,17 @@ algoritmo se rechazan al preparar el motor.
 - `RelojSimulacion` invoca `OrquestadorSimulacion.avanzar` cada `periodo-reloj-ms` (200) con el tiempo real transcurrido
   mientras la ejecución está en curso; las pausas no acumulan tiempo y el tiempo de planificación no se acredita.
 - Propiedades en `paqrap.tiempo-real.*` (`application.yml`): `difusion-habilitada`, `reloj-habilitado`, `frecuencia-hz`,
-  `periodo-sondeo-ms`, `periodo-reloj-ms`, `max-salto-reloj-ms` y `origenes-permitidos` (`*` por ahora: sin autenticación).
+  `periodo-sondeo-ms`, `periodo-reloj-ms`, `max-salto-reloj-ms`, `minutos-por-segundo-base` y `origenes-permitidos`
+  (`*` por ahora: sin autenticación).
+- **Velocidad del reloj.** Base de 3 minutos simulados por segundo real (`minutos-por-segundo-base: 3.0`) en 5D y Colapso:
+  5 días (7200 min) tardan unos 40 min reales a x1. Día a día corre en tiempo real (1/60) y no admite cambio.
+  `POST /api/simulacion/velocidad` con `{"factor": 1|2|5|10}` multiplica la base en caliente (aunque corra la simulación;
+  el siguiente pulso ya usa el valor nuevo) y responde 204. Responde 400 `{ "mensaje": ... }` si el factor no es 1, 2, 5 o 10,
+  si el escenario es `diaria` o si no hay simulación configurada. El factor vuelve a 1 al configurar o reiniciar. El `SimSnapshot`
+  (`GET /api/simulacion/estado` y `/topic/simulacion/estado`) incluye `speedFactor` (entero, 1 por defecto) y `simMinPerSec`
+  (minutos simulados por segundo real efectivos; 1/60 en diaria). `configuracion_ejecucion.aceleracion_reloj` guarda solo la base;
+  el factor no se persiste.
+- `POST /api/simulacion/configuracion`: `considerarIncidencias` es opcional (si falta o es `null`, se asume `false`).
 - Las pruebas del canal (`CanalStompTest`) levantan un servidor real en puerto aleatorio sin base de datos.
 
 ### Migraciones y carga de archivos (B-03/B-04)
@@ -152,6 +162,11 @@ se conserva para diagnóstico y se desecha junto con la instancia. En PowerShell
 $env:PAQRAP_PRUEBA_DB_URL = 'jdbc:postgresql://127.0.0.1:55483/postgres'
 .\mvnw.cmd test
 ```
+
+`SimulacionPostgresqlTest` (registro de pedidos manuales y una 5D completa persistida) se activa con
+`PAQRAP_PRUEBA_DB_URL=jdbc:postgresql://localhost:5433/paqrap` (cualquier PostgreSQL de `localhost`/`127.0.0.1`) y, si el
+usuario no es `paqrap_prueba` sin contraseña, `PAQRAP_PRUEBA_DB_USUARIO` y `PAQRAP_PRUEBA_DB_CLAVE` (contenedor de
+`compose.yaml`: `paqrap` / `paqrap_local`). Crea un esquema aleatorio propio y lo borra al terminar.
 
 Sin esa variable, las pruebas PostgreSQL se omiten; las unitarias y las existentes se ejecutan sin BD.
 Esta verificación local no sustituye P-08 (estrategia automatizada de BD/CI) ni acredita los 10 segundos de
@@ -225,6 +240,10 @@ maestros asociados. B-08 REST está en curso; B-09 (STOMP) agrega 21 pruebas en 
 | aplicacion | `SaludControladorTest` | `GET /api/salud` por HTTP real, prefijo `/api`, errores 404/405 con `{ mensaje }` |
 | aplicacion | `ManejadorErroresTest` | Traducción de excepciones a `{ mensaje }` |
 | aplicacion | `ServicioPlanificacionTest` | TS vía el servicio sobre un `EstadoOperacion` pequeño → `COMPLETA`, reproducible |
+| aplicacion | `VelocidadSimulacionTest` | Base de 3 min/s en 5D, factor en caliente en motor y orquestador, factores inválidos, Día a día fijo, motor nuevo en x1 |
+| aplicacion | `VelocidadHttpTest`, `VelocidadHttpDiariaTest`, `VelocidadHttpSinSimulacionTest` | `POST /api/simulacion/velocidad` por HTTP: 204, 400 con mensaje, campos `speedFactor`/`simMinPerSec`, difusión inmediata |
+| aplicacion | `ConfiguracionHttpTest` | `POST /api/simulacion/configuracion` sin/con `considerarIncidencias` (el cuerpo que antes daba 400) y velocidad base |
+| aplicacion | `SimulacionPostgresqlTest` | (optativa) pedido manual por la API y 5D completa persistida en PostgreSQL local |
 
 ## Origen del código del planificador
 

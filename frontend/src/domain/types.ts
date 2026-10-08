@@ -139,6 +139,8 @@ export interface RunConfig {
   fleet: FleetConfig;
   capacities: { noroeste: number; este: number };
   shiftStarts: [number, number, number]; // minutos desde medianoche
+  /** Si el planificador tiene en cuenta averías, mantenimientos y bloqueos (por defecto el servidor asume false). */
+  considerarIncidencias?: boolean;
 }
 
 export interface SimSnapshot {
@@ -153,6 +155,8 @@ export interface SimSnapshot {
   cycleDay: number;
   epochDate: string; // fecha calendario del minuto 0, aaaa-mm-dd
   runElapsedMs: number; // tiempo real de ejecución acumulado
+  speedFactor?: number; // multiplicador de velocidad (1, 2, 5 o 10); solo 5D y Colapso, 1 si falta
+  simMinPerSec?: number; // minutos simulados por segundo real efectivos
   shiftStarts: number[];
   fleet: FleetConfig;
   vehicles: Vehicle[];

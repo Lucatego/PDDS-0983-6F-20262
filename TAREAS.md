@@ -142,6 +142,29 @@ pruebas de PostgreSQL local ni RDS.
 Suite del backend en Java 21 (`-Dmaven.compiler.release=21`): 88 ejecutadas, 0 fallas y 14 omitidas (13 de PostgreSQL
 y 1 por dataset externo opcional); `git diff --check` sin errores.
 
+**Rama `feature/backend-velocidad` (08/10/2026), sobre B-08/B-09:**
+- `POST /api/pedidos` fallaba porque `RepositorioSimulacion.registrarPedidoManual` insertaba `pedido.fecha_real_registro`
+  (no existe; la columna es `creado_en`, NOT NULL sin valor por defecto, por lo que el INSERT ahora la llena con
+  `CURRENT_TIMESTAMP`) y omitía `ejecucion_id`, que el CHECK de `pedido` exige para origen MANUAL. Sin migración (opción A).
+  `registrar()` del controlador convierte cualquier excepción en `OrderResult{ok:false}`, por lo que el fallo no se veía como 500.
+  `SimulacionPostgresqlTest` (optativa, PostgreSQL local con `PAQRAP_PRUEBA_DB_URL=jdbc:postgresql://localhost:5433/paqrap`)
+  registra un pedido por la API y corre una 5D completa que ejercita los demás INSERT/UPDATE de la simulación: no hay más
+  columnas inexistentes. **Hallazgo abierto:** `RepositorioSimulacion.registrarIncidencia` viola `incidencia_check2` para
+  bloqueos manuales (`POST /api/bloqueos` → 500): el CHECK exige `bloqueo_id` (hay que insertar antes en `bloqueo`/`bloqueo_vertice`);
+  además guarda el fin previsto en `fecha_fin` (la columna de fin previsto es `fecha_fin_prevista`). El mantenimiento manual sí persiste;
+  la avería manual no se probó contra la BD (necesita una unidad en ruta).
+- Control de velocidad (contrato acordado con el front): base `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 min simulados/s
+  para 5D y Colapso (antes 10,0 fijo; 5 días ≈ 40 min reales a x1); Día a día sigue en 1/60 y no admite cambio.
+  `POST /api/simulacion/velocidad {"factor":1|2|5|10}` aplica base × factor en caliente (204; 400 con `{mensaje}` si el
+  factor no es válido, el escenario es diaria o no hay simulación). El factor vive en `MotorSimulacion` y vuelve a 1 al configurar o
+  reiniciar (motor nuevo). `SimSnapshot` incluye `speedFactor` y `simMinPerSec` (1/60 en diaria). `configuracion_ejecucion.aceleracion_reloj`
+  conserva la velocidad **base** (3,0; 1/60 en diaria) y no se actualiza con el factor: es un control operativo transitorio y,
+  si se guardara el valor efectivo, un reinicio lo tomaría como nueva base. Pendiente decidir si el cambio debe quedar en la bitácora (LE054; requeriría un tipo de evento nuevo).
+- `POST /api/simulacion/configuracion`: `considerarIncidencias` es opcional (ausente o `null` → false). La causa del 400 era el
+  `boolean` primitivo de `RunConfig`: Jackson 3 falla con campos primitivos ausentes. El cuerpo exacto de la prueba manual
+  (con `shiftStarts` como `int[]`) ahora responde 204. Los demás DTO con primitivos (`OrderInput`, `AveriaInput`, `Fleet`, etc.) siguen
+  exigiendo todos sus campos.
+
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|
 | P-01 | Alinear `plazo-incluye-servicio` del backend | `backend/aplicacion/src/main/resources/application.yml` tiene `plazo-incluye-servicio: true` (valor del código y de la experimentación). DD-04 aprobó `false` por defecto (Q&A 11) como parámetro **por ejecución**. Cambiarlo cuando la configuración se lea de `configuracion_ejecucion`; decidir si el valor global del yml pasa a `false` o se elimina. La experimentación (IEN v03) no se rehace por ahora. | Al programar B-05 (simulación) |

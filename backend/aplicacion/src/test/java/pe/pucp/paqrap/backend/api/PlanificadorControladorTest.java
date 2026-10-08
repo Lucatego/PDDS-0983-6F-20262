@@ -12,7 +12,7 @@ class PlanificadorControladorTest {
 
     @Test
     void catalogosCumpleLosGruposDelContratoFrontend() {
-        var controlador = new PlanificadorControlador(null, null, null, null);
+        var controlador = new PlanificadorControlador(null, null, null, null, null);
 
         var catalogos = controlador.catalogos();
 
@@ -25,7 +25,7 @@ class PlanificadorControladorTest {
     void estadoSinEjecucionAunTieneLaFormaCompletaDeSnapshot() {
         var orquestador = mock(OrquestadorSimulacion.class);
         when(orquestador.motor()).thenReturn(null);
-        var controlador = new PlanificadorControlador(orquestador, mock(ServicioCargaArchivos.class), null, null);
+        var controlador = new PlanificadorControlador(orquestador, mock(ServicioCargaArchivos.class), null, null, null);
 
         var snapshot = controlador.estado();
 
@@ -38,7 +38,7 @@ class PlanificadorControladorTest {
 
     @Test
     void pedidoFueraDeRangoDevuelveResultadoFallidoSinAccesoABaseDeDatos() {
-        var controlador = new PlanificadorControlador(null, null, null, null);
+        var controlador = new PlanificadorControlador(null, null, null, null, null);
 
         var resultado = controlador.pedido(new PlanificadorControlador.OrderInput("cliente", 25, 36, 1, 1));
 

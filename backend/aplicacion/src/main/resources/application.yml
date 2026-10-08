@@ -65,4 +65,5 @@ paqrap:
     periodo-sondeo-ms: 50          # cada cuánto se revisa si hay algo que difundir
     periodo-reloj-ms: 200          # cada cuánto avanza el reloj de la simulación
     max-salto-reloj-ms: 2000       # tope de tiempo real acreditado en un solo avance
+    minutos-por-segundo-base: 3.0  # velocidad base de 5D y Colapso (min simulados/s real); x1 = 5 días en ~40 min. Día a día: 1/60
     origenes-permitidos: "*"       # patrones de origen del WebSocket, separados por coma

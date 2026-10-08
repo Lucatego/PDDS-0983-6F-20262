@@ -1,5 +1,6 @@
 package pe.pucp.paqrap.backend.configuracion;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +22,10 @@ import org.springframework.validation.annotation.Validated;
  *                           transcurrido
  * @param maxSaltoRelojMs    tope de tiempo real que se acredita en un solo avance (evita saltos tras una pausa larga
  *                           del servidor o un ciclo de planificación lento)
+ * @param minutosPorSegundoBase velocidad base de los escenarios 5D y Colapso en minutos simulados por segundo real
+ *                           (3 por defecto: 5 días = 7200 min en unos 40 min reales a x1); se multiplica por el
+ *                           factor 1, 2, 5 o 10 de {@code POST /api/simulacion/velocidad}. Máximo 24 para que x10 no
+ *                           pase de 240 min/s, el tope de {@code ConfiguracionSimulacion}. Día a día no la usa
  * @param origenesPermitidos patrones de origen aceptados por el WebSocket, separados por coma ({@code *} = todos; la
  *                           API aún no tiene autenticación)
  */
@@ -33,6 +38,7 @@ public record PropiedadesTiempoReal(
         @DefaultValue("50") @Positive long periodoSondeoMs,
         @DefaultValue("200") @Positive long periodoRelojMs,
         @DefaultValue("2000") @Positive long maxSaltoRelojMs,
+        @DefaultValue("3.0") @Positive @DecimalMax("24.0") double minutosPorSegundoBase,
         @DefaultValue("*") @NotBlank String origenesPermitidos) {
 
     /**

@@ -45,7 +45,7 @@ class DifusionTiempoRealTest {
     private DifusionTiempoReal difusion(OrquestadorSimulacion orquestador) {
         // 5 Hz: un snapshot cada 200 ms mientras corre.
         return new DifusionTiempoReal(plantilla, orquestador, new PlanificadorControlador(orquestador, null, null,
-                null), new PropiedadesTiempoReal(true, true, 5, 50, 200, 2000, "*"));
+                null, null), new PropiedadesTiempoReal(true, true, 5, 50, 200, 2000, 3.0, "*"));
     }
 
     private List<Envio> a(String destino) {
@@ -109,7 +109,7 @@ class DifusionTiempoRealTest {
 
         @SuppressWarnings("unchecked")
         var snapshot = (Map<String, Object>) a(DifusionTiempoReal.DESTINO_ESTADO).getFirst().carga();
-        var esperado = new PlanificadorControlador(orquestador, null, null, null).estado();
+        var esperado = new PlanificadorControlador(orquestador, null, null, null, null).estado();
         assertThat(snapshot.keySet()).isEqualTo(esperado.keySet());
         assertThat(snapshot).containsEntry("scenario", "5d").containsEntry("configured", true)
                 .containsEntry("running", true).containsEntry("epochDate", "2026-09-15");

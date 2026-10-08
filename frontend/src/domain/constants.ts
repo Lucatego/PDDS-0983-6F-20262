@@ -1,8 +1,13 @@
 // Parámetros del caso PaqRap (Situación Auténtica) y de la simulación.
 import type { FallaTypeInfo, Scenario, VehicleTypeInfo, VehicleTypeKey, Warehouse } from './types';
 
-/** Minutos simulados por segundo real. */
+/** Minutos simulados por segundo real del modo local en Día a día (demostración; el backend usa tiempo real). */
 export const SIM_MIN_PER_SEC = 10;
+/** Velocidad base (×1) de Simulación 5D y Colapso: 5 días (7200 min) duran ≈ 40 min reales. */
+export const SIM_BASE_MIN_PER_SEC = 3;
+/** Multiplicadores de velocidad disponibles en el monitor para 5D y Colapso. */
+export const SPEED_FACTORS = [1, 2, 5, 10] as const;
+export type SpeedFactor = (typeof SPEED_FACTORS)[number];
 /** Retícula urbana: 70 km (X) × 50 km (Y), nodos cada 1 km. */
 export const GRID_W = 70;
 export const GRID_H = 50;

@@ -95,6 +95,10 @@ public final class MotorSimulacion {
     private String motivoFin;
     private String pedidoColapso;
     private long tiempoRealMs;
+    private volatile int factorVelocidad = 1;
+
+    /** Multiplicadores de velocidad admitidos en caliente para 5D y Colapso (contrato con el frontend). */
+    public static final List<Integer> FACTORES_VELOCIDAD = List.of(1, 2, 5, 10);
 
     public MotorSimulacion(ConfiguracionSimulacion configuracion, List<Pedido> demanda, List<Almacen> almacenes,
             List<Bloqueo> bloqueos, List<Mantenimiento> mantenimientos) {
@@ -163,6 +167,7 @@ public final class MotorSimulacion {
         motivoFin = otro.motivoFin;
         pedidoColapso = otro.pedidoColapso;
         tiempoRealMs = otro.tiempoRealMs;
+        factorVelocidad = otro.factorVelocidad;
     }
 
     public MotorSimulacion copiar() { return new MotorSimulacion(this); }
@@ -211,8 +216,9 @@ public final class MotorSimulacion {
         }
         if (!estado.equals("EN_CURSO")) return;
         LocalDateTime inicioAvance = reloj;
+        double minutosPorSegundo = minutosPorSegundo();
         LocalDateTime destino = reloj.plusNanos(Math.round(segundosReales
-                * configuracion.minutosPorSegundo() * 60_000_000_000.0));
+                * minutosPorSegundo * 60_000_000_000.0));
         if (configuracion.finHorizonte() != null && destino.isAfter(configuracion.finHorizonte())) {
             destino = configuracion.finHorizonte();
         }
@@ -238,7 +244,7 @@ public final class MotorSimulacion {
         }
         // Solo cuenta el intervalo consumido: un tick puede sobrepasar el horizonte o detectar colapso.
         tiempoRealMs += Math.round(Duration.between(inicioAvance, reloj).toNanos()
-                / (configuracion.minutosPorSegundo() * 60_000_000.0));
+                / (minutosPorSegundo * 60_000_000.0));
     }
 
     /** Conserva el orden temporal, incluso cuando hay varias entregas dentro del mismo minuto. */
@@ -464,6 +470,34 @@ public final class MotorSimulacion {
     }
 
     public ConfiguracionSimulacion configuracion() { return configuracion; }
+
+    /** Multiplicador de velocidad vigente (1 por defecto); solo cambia en 5D y Colapso. */
+    public int factorVelocidad() { return factorVelocidad; }
+
+    /**
+     * Minutos simulados por segundo real efectivos: la velocidad base del escenario por el factor vigente. Dia a dia
+     * siempre corre en tiempo real (1/60) y no admite factor.
+     */
+    public double minutosPorSegundo() {
+        return configuracion.minutosPorSegundo() * (configuracion.escenario() == ConfiguracionSimulacion.Escenario.DIA_A_DIA
+                ? 1 : factorVelocidad);
+    }
+
+    /**
+     * Cambia el multiplicador de velocidad en caliente: el siguiente {@link #avanzar} ya lo usa (LE058).
+     *
+     * @param factor uno de {@link #FACTORES_VELOCIDAD}
+     * @throws IllegalArgumentException si el escenario es Dia a dia o el factor no esta permitido
+     */
+    public void establecerFactorVelocidad(int factor) {
+        if (configuracion.escenario() == ConfiguracionSimulacion.Escenario.DIA_A_DIA) {
+            throw new IllegalArgumentException("El escenario Dia a dia corre en tiempo real y no admite cambio de velocidad");
+        }
+        if (!FACTORES_VELOCIDAD.contains(factor)) {
+            throw new IllegalArgumentException("El factor de velocidad debe ser 1, 2, 5 o 10");
+        }
+        factorVelocidad = factor;
+    }
     public LocalDateTime reloj() { return reloj; }
     public String estado() { return estado; }
     public String motivoFin() { return motivoFin; }

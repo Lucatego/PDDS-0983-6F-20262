@@ -11,7 +11,10 @@ import {
   GRID_W,
   PRIORITY_BUCKETS,
   SCENARIO_LABEL,
+  SIM_BASE_MIN_PER_SEC,
   SIM_MIN_PER_SEC,
+  SPEED_FACTORS,
+  type SpeedFactor,
   VEHICLE_TYPES,
   VEHICLE_TYPE_KEYS,
   initialWarehouses,
@@ -71,6 +74,7 @@ function emptyStats(): Stats {
 
 export class SimulationEngine {
   private scenario: Scenario = '5d';
+  private speedFactor: SpeedFactor = 1;
   private configured = false;
   private running = false;
   private waitingFirstOrder = false;
@@ -128,6 +132,7 @@ export class SimulationEngine {
   configure(cfg: RunConfig): void {
     if (this.running) this.stop('Ejecución detenida para aplicar una nueva configuración.');
     this.scenario = cfg.scenario;
+    this.speedFactor = 1;
     this.fleet = { ...cfg.fleet };
     this.shiftStarts = [...cfg.shiftStarts];
     this.shifts = buildShifts(this.shiftStarts);
@@ -172,6 +177,7 @@ export class SimulationEngine {
   /** Vuelve al estado sin configurar (equivale a "Reiniciar" del prototipo). */
   reset(): void {
     if (this.running) this.stop('Ejecución detenida para reiniciar.');
+    this.speedFactor = 1;
     this.configured = false;
     this.waitingFirstOrder = false;
     this.collapsed = false;
@@ -187,7 +193,20 @@ export class SimulationEngine {
 
   tick(dtRealSec: number): void {
     if (!this.running) return;
-    this.step(Math.min(0.25, Math.max(0, dtRealSec)) * SIM_MIN_PER_SEC);
+    this.step(Math.min(0.25, Math.max(0, dtRealSec)) * this.simMinPerSec());
+  }
+
+  /** Minutos simulados por segundo real: 5D y Colapso = base × multiplicador; Día a día no cambia. */
+  private simMinPerSec(): number {
+    return this.scenario === 'diaria' ? SIM_MIN_PER_SEC : SIM_BASE_MIN_PER_SEC * this.speedFactor;
+  }
+
+  /** Cambia el multiplicador de velocidad en caliente. Solo Simulación 5D y Colapso. */
+  setSpeed(factor: number): void {
+    if (!this.configured) throw new Error('No hay simulación configurada.');
+    if (this.scenario === 'diaria') throw new Error('Día a día corre en tiempo real y no admite cambio de velocidad.');
+    if (!(SPEED_FACTORS as readonly number[]).includes(factor)) throw new Error('Velocidad no válida: use ×1, ×2, ×5 o ×10.');
+    this.speedFactor = factor as SpeedFactor;
   }
 
   registerOrder(input: OrderInput): OrderResult {
@@ -318,6 +337,8 @@ export class SimulationEngine {
       cycleDay: this.cycleDay,
       epochDate: this.epochDate,
       runElapsedMs: elapsed,
+      speedFactor: this.scenario === 'diaria' ? 1 : this.speedFactor,
+      simMinPerSec: this.simMinPerSec(),
       shiftStarts: [...this.shiftStarts],
       fleet: { ...this.fleet },
       vehicles: this.vehicles.map((v) => ({ ...v, pos: { ...v.pos }, trail: v.trail.slice() })),

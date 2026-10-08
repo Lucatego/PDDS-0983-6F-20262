@@ -81,6 +81,7 @@ desde las 00:00 del día 1; coordenadas en km de la retícula.
 | `GET /catalogos` | — | `Catalogos` |
 | `POST /simulacion/configuracion` | `RunConfig` | 204 |
 | `POST /simulacion/iniciar` · `/detener` · `/reiniciar` | — | 204 |
+| `POST /simulacion/velocidad` | `{ factor: 1 \| 2 \| 5 \| 10 }` | 204; solo 5D y Colapso, en caliente. Base ×1 = 3 min simulados/s (5 días ≈ 40 min). El `SimSnapshot` trae `speedFactor` y `simMinPerSec` |
 | `POST /pedidos` | `OrderInput` | `OrderResult` |
 | `POST /pedidos/lote` | `OrderInput[]` | `OrderResult[]` |
 | `POST /archivos/{ventas\|bloqueos\|averias\|mantenimiento}` | texto plano del archivo | `FileLoadSummary` |

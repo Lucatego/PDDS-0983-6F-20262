@@ -1,6 +1,7 @@
 // Comandos (mutaciones) y consultas de TanStack Query sobre la pasarela activa.
 // Los errores se muestran como aviso; cada formulario puede además leer mutation.error.
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { SpeedFactor } from '@/domain/constants';
 import type { FallaTipo, FileKind, OrderInput, Point, RunConfig } from '@/domain/types';
 import { useUiStore } from '@/store/uiStore';
 import { gateway } from './instance';
@@ -22,6 +23,10 @@ export function useRunControl() {
       action === 'start' ? gateway.start() : action === 'stop' ? gateway.stop() : gateway.reset(),
     onError: errorToast,
   });
+}
+
+export function useSetSpeed() {
+  return useMutation({ mutationFn: (factor: SpeedFactor) => gateway.setSpeed(factor), onError: errorToast });
 }
 
 export function useRegisterOrder() {
