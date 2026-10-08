@@ -79,4 +79,31 @@ class SaludControladorTest {
         assertThat(r.estado()).isEqualTo(405);
         assertThat((String) JsonPath.read(r.cuerpo(), "$.mensaje")).contains("POST");
     }
+
+    @Test
+    @DisplayName("GET /api/catalogos expone los tipos consumidos por la GUI")
+    void catalogosContratoFrontend() {
+        var r = llamar(HttpMethod.GET, "/api/catalogos");
+        assertThat(r.estado()).isEqualTo(200);
+        java.util.List<?> vehicleTypes = JsonPath.read(r.cuerpo(), "$.vehicleTypes");
+        java.util.List<?> fallaTypes = JsonPath.read(r.cuerpo(), "$.fallaTypes");
+        java.util.List<?> modalidades = JsonPath.read(r.cuerpo(), "$.modalidades");
+        assertThat(vehicleTypes).hasSize(3);
+        assertThat(fallaTypes).hasSize(3);
+        assertThat(modalidades).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("GET /api/simulacion/estado entrega snapshot inicial compatible")
+    void snapshotInicialContratoFrontend() {
+        var r = llamar(HttpMethod.GET, "/api/simulacion/estado");
+        assertThat(r.estado()).isEqualTo(200);
+        assertThat((Boolean) JsonPath.read(r.cuerpo(), "$.configured")).isFalse();
+        java.util.Map<?,?> files = JsonPath.read(r.cuerpo(), "$.files");
+        java.util.Map<?,?> byPriority = JsonPath.read(r.cuerpo(), "$.stats.byPriority");
+        assertThat(files).isNotNull();
+        assertThat(byPriority).isNotNull();
+        java.util.List<?> vehicles = JsonPath.read(r.cuerpo(), "$.vehicles");
+        assertThat(vehicles).isEmpty();
+    }
 }
