@@ -269,23 +269,37 @@ previa e independiente por escenario, resultados exportables, última planificac
 laboratorio sin servicios externos, multi-dispositivo, reproducible, con pruebas y documentación concordante.
 
 Pasos siguientes (avance secuencial autorizado por el usuario el 04/10/2026; detalle en `TAREAS.md` §3):
-2. **B-03 (revisión pendiente)**: `V1__esquema.sql` (41 tablas sin seguridad, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
+2. **B-03 (en main; aplicación al RDS pendiente)**: `V1__esquema.sql` (41 tablas sin seguridad, orden de §6.8, índices de §10.3) y `V2__datos_iniciales.sql`
    (catálogos de §7) con Flyway; agente `backend` en `feature/backend-persistencia`. El SQL lo revisa el usuario
    **antes** de aplicarlo al RDS compartido (una migración aplicada no se edita: las correcciones van en V3+).
    D-06 postergada por el usuario (04/10/2026): V1 contiene 41 tablas, sin `seg_*`; `registrado_por` nullable y sin FK.
-3. B-04 carga de archivos a la BD.
-4. B-05 reloj y escenarios (portar `SimulacionComparada`), luego B-07 resumen; B-06 incidencias después del corte.
-5. B-08 y B-09 API REST y difusión STOMP según el contrato del front.
-6. I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
+3. ✅ B-04 carga de archivos a la BD (en main; rendimiento con archivos reales por medir).
+4. ✅ B-05 reloj y escenarios, ✅ B-07 resumen, ✅ B-06 incidencias (en main).
+5. 🔄 B-08 API REST (en main, en curso) y ✅ B-09 difusión STOMP (en main, PR #5; falta probar con el front real).
+6. ⬜ I-01 e I-02 Integración con el front (`VITE_DATA_SOURCE=server`).
 Huecos del planificador a decidir en B-06: tipos de avería, trasvase, traslado al central, `rutasEnCurso` sin
 uso y un solo viaje por vehículo y ciclo (modificar el núcleo o compensar en el backend).
-Avance de la rama `feature/backend-persistencia` (04/10/2026): V1/V2 y servicio JPA de carga de archivos
-verificados en PostgreSQL 18.4 local: 55 pruebas aprobadas y 1 opcional omitida, usando Java 21 como comprobación
-de compatibilidad; repetir con Java 25. Flyway requiere `PAQRAP_MIGRACIONES_HABILITADAS=true` tras revisar el SQL.
-El RDS no se ha modificado. API de carga pendiente de B-08; seguridad postergada y sin bloqueo sobre B-03.
-El usuario verificará el RDS manualmente: no acceder a ese entorno. B-05 en curso: motor determinista
-con diez pruebas y configuración persistida con dos pruebas adicionales sobre PostgreSQL local.
-Falta conectar la orquestación y persistir ciclos/rutas antes del resumen y transporte REST/STOMP.
+Estado al 08/10/2026 (detalle en `TAREAS.md` §3 y `backend/README.md`):
+- En `main` (PR #4, `feature/backend-persistencia`, fusionado por Yaser el 08/10/2026): V1/V2/V3 de Flyway
+  (41 tablas, sin `seg_*`), carga de archivos (B-04), motor y orquestador de simulación con persistencia de ciclos,
+  rutas, paradas, partes y stock (B-05), averías tipadas e incidencias por ejecución (B-06), bitácora, resumen e
+  indicadores (B-07) y `PlanificadorControlador` REST con prefijo `/api` (B-08, en curso: falta cobertura HTTP de
+  mutaciones/cargas y reconstruir conteos de archivos al reiniciar). Flyway requiere
+  `PAQRAP_MIGRACIONES_HABILITADAS=true`. El RDS no se ha modificado: lo verifica el usuario manualmente, no acceder.
+- En `main` (PR #5, `feature/backend-velocidad`, fusionado por Gandy el 08/10/2026): B-09 (STOMP `/ws`,
+  `SimSnapshot` a 5 Hz, `LogEvent`, `RelojSimulacion` que hace avanzar el orquestador); `backend/compose.yaml`
+  (PostgreSQL 18 en el puerto 5433, P-07); corrección del INSERT de pedidos manuales y `SimulacionPostgresqlTest`;
+  control de velocidad `POST /api/simulacion/velocidad {factor: 1|2|5|10}` sobre una base de 3 min simulados/s
+  (5D ≈ 40 min; Día a día en tiempo real, sin cambio), con `speedFactor`/`simMinPerSec` en el snapshot y selector
+  en el `Topbar` del front; `considerarIncidencias` opcional en `RunConfig`; reiniciar deja el sistema sin
+  configurar (antes 500); `RecuperadorEjecuciones` cierra como `ERROR` las ejecuciones activas al arrancar (LE060);
+  posición correcta de vehículos en espera y en parada.
+- Hallazgo abierto (Gandy, `TAREAS.md` §4): `POST /api/bloqueos` da 500 porque `registrarIncidencia` no inserta
+  antes en `bloqueo`/`bloqueo_vertice` (CHECK `incidencia_check2`) y usa `fecha_fin` en lugar de `fecha_fin_prevista`.
+  La avería manual no se ha probado contra la BD.
+- Frontend: solo cambió el control de velocidad (PR #5). I-01/I-02 (integración con `VITE_DATA_SOURCE=server`)
+  siguen pendientes.
+- Pruebas locales con Java 21 (`-Dmaven.compiler.release=21`); falta repetir con JDK 25.
 Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
