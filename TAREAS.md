@@ -83,9 +83,9 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (41 tablas; seguridad postergada) y `V2__datos_iniciales.sql` (catálogos §7). Verificadas con Flyway en PostgreSQL 18.4 local; activación explícita y revisión antes del RDS | M-05 | 🔄 validado localmente; pendiente revisión/aplicación al RDS |
 | B-04 | back-datos | Servicio JPA de carga de ventas, bloqueos, mantenimiento y averías; códigos por línea, reintentos idempotentes y errores por línea. Pruebas locales en verde. API queda en B-08; rendimiento con archivos reales en RDS por medir | B-03 | 🔄 implementado y probado localmente; validación en entorno objetivo pendiente |
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ✅ orquestador y persistencia de ciclos/rutas completados (`OrquestadorSimulacion`, `RepositorioSimulacion`); 13 pruebas de simulación en verde |
-| B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ configuración por ejecución persistida y expuesta; `FiltroIncidencias` entrega al planificador solo incidencias activas sin acoplar Tabu Search; 18 pruebas de simulación en verde |
-| B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ⬜ |
-| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | ⬜ |
+| B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ Averías tipadas, regla de indisponibilidad por tipo, indicador por ejecución separado de averías aleatorias, filtrado/replanificación de demanda no comprometida; pruebas unitarias verdes. V3 y carga RDS quedan pendientes de la verificación manual del usuario. |
+| B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ✅ eventos, consolidado parcial/final e indicadores por plazo persistidos idempotentemente; pruebas unitarias aisladas |
+| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre |
 | B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ⬜ |
 
 ### F4 — Integración
@@ -130,10 +130,17 @@ Falta repetir con el JDK 25 del proyecto. No se modificó el RDS ni se incorpora
 El 07/10/2026 se completó y validó B-05: `OrquestadorSimulacion` coordina el ciclo de vida del motor y Tabu Search,
 mientras `RepositorioSimulacion` persiste ciclos, rutas, paradas, partes de pedidos y movimientos de stock.
 Se añadieron 3 pruebas unitarias aisladas en `OrquestadorSimulacionTest` (todas en verde; 45 pruebas aprobadas en el reactor).
-El 07/10/2026 se completó y validó B-06: consideración de incidencias controlada por configuración por ejecución
-(`ConfiguracionSimulacion`), persistida en `configuracion_ejecucion` y leída en `LectorEjecucion`. `FiltroIncidencias`
-entrega a `EstadoOperacion` únicamente las incidencias activas en el instante/ventana, manteniendo Tabu Search desacoplado.
-5 pruebas nuevas agregadas (4 en `FiltroIncidenciasTest` y 1 en `MotorSimulacionTest`), 50 pruebas aprobadas en total sin fallos.
+El 07/10/2026 B-06 volvió a pendiente para completar el alcance de incidencias tipadas y replanificación. El 08/10/2026
+se completó: averías tipadas, regla de indisponibilidad por tipo, opción por ejecución independiente de la generación
+aleatoria, y filtrado/replanificación de demanda aún no comprometida. Se añadieron pruebas unitarias y la migración V3;
+su aplicación/carga en RDS queda para la verificación manual del usuario.
+El 07/10/2026 se completó B-07: `OrquestadorSimulacion` persiste eventos nuevos y actualiza el resumen e indicadores
+por plazo al iniciar, avanzar, pausar/detener y registrar operaciones manuales. El 08/10/2026 se integró el desglose
+de averías tipadas de B-06. El resumen calcula cumplimiento, holgura y tiempos de entrega, uso de flota/capacidad,
+reprogramaciones e incidencias activas. Se añadieron pruebas unitarias de cálculo y persistencia orquestada; sin
+pruebas de PostgreSQL local ni RDS.
+Suite del backend en Java 21 (`-Dmaven.compiler.release=21`): 88 ejecutadas, 0 fallas y 14 omitidas (13 de PostgreSQL
+y 1 por dataset externo opcional); `git diff --check` sin errores.
 
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|

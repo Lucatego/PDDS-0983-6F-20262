@@ -4,9 +4,7 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: B-01/B-04 implementados y B-05 en curso. Incluye migraciones y carga de archivos, motor determinista,
-configuración persistida y preparación de entradas desde PostgreSQL. La orquestación y persistencia de ciclos/rutas,
-WebSocket y endpoints del contrato del frontend siguen pendientes. No se ha aplicado el esquema al RDS.
+Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archivos, averías tipadas, configuración separada para considerar incidencias, filtrado determinista y replanificación de demanda pendiente, persistencia de ciclos/rutas, bitácora e indicadores por ejecución. El controlador REST cubre configuración, ciclo de vida, pedidos/lote, archivos, incidencias, catálogos y snapshot dinámico. Hay pruebas HTTP básicas para catálogo y snapshot inicial; falta cubrir por HTTP las mutaciones y cargas, y reconstruir conteos/procedencia de archivos desde persistencia al reiniciar el servicio. B-09 (STOMP) permanece pendiente. No se ha aplicado el esquema al RDS.
 
 ## Requisitos
 
@@ -95,9 +93,9 @@ backend/
     └── src/main/java/pe/pucp/paqrap/backend/
         ├── PaqRapAplicacion     Punto de entrada
         ├── configuracion        Propiedades del planificador, beans del TS, prefijo /api
-        ├── api                  SaludControlador (GET /api/salud), ManejadorErrores, RespuestaError
+        ├── api                  SaludControlador y PlanificadorControlador REST, ManejadorErrores
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
-        ├── simulacion           ConfiguracionSimulacion, MotorSimulacion y PreparacionSimulacion (B-05 en curso)
+        ├── simulacion           ConfiguracionSimulacion, MotorSimulacion, orquestador y resumen (B-05/B-07)
         └── persistencia         Carga de archivos y preparación/configuración persistida de ejecuciones
 ```
 
@@ -107,10 +105,14 @@ algoritmo se rechazan al preparar el motor.
 ### Migraciones y carga de archivos (B-03/B-04)
 
 - V1 crea las 41 tablas funcionales, FK, restricciones e índices del modelo v1.0.1. Seguridad queda postergada
-  (D-06): no hay tablas `seg_*`; `registrado_por` es nullable y sin FK. V2 carga catálogos y 31 parámetros.
+  (D-06): no hay tablas `seg_*`; `registrado_por` es nullable y sin FK. V2 carga catálogos y 31 parámetros. V3 agrega
+  `configuracion_ejecucion.considerar_incidencias` sin confluirlo con la generación aleatoria de averías.
 - `ServicioCargaArchivos.cargar(tipo, nombre, contenido, ejecucionId)` es el punto de entrada para B-08.
   Ventas, bloqueos y mantenimiento son maestros (`ejecucionId = null`). Averías requiere una ejecución
   `CONFIGURADA` y su flota ya creada; se registran como incidencias `PROGRAMADA`, con fecha relativa al inicio.
+- `POST /api/archivos/{tipo}` acepta `X-Nombre-Archivo` (o `?nombre=`) para el nombre del archivo. Si no se envía,
+  genera nombres a partir del periodo de inicio de la ejecución; para archivos que no correspondan a ese periodo se
+  debe enviar el nombre explícito.
 - Se aceptan los nombres oficiales y reales de ventas/bloqueos, BOM, comentarios y líneas vacías. Los códigos
   usan la línea física. Errores por línea no impiden cargar las válidas; fallas de persistencia revierten todo.
   Un nombre/periodo inválido se rechaza antes de crear la auditoría (no existe un periodo válido para registrarla).
@@ -185,14 +187,15 @@ Cualquier otra librería se consulta antes de agregarla.
 
 ## Pruebas
 
-B-05 en desarrollo: `MotorSimulacion` contiene el reloj determinista y los ciclos Sa, con rutas
-comprometidas y partes estables. `RepositorioConfiguracionEjecucion` congela parámetros, semilla,
-flota, turnos, velocidades y stock inicial en una transacción. Sus pruebas usan exclusivamente
-PostgreSQL local optativo; la verificación del RDS corresponde al usuario. Pendientes: conectar
-la orquestación, persistir ciclos/rutas y exponer los controles REST/STOMP (no disponibles todavía).
-`LectorEjecucion.preparar(id)` reconstruye una entrada inmutable desde la configuración y los archivos
-maestros asociados, y crea motor/planificador por ejecución sin arrancar el reloj. La integración de
-esa lectura con PostgreSQL no se ejecutó en esta entrega; sigue pendiente por decisión del usuario.
+B-05 orquesta el reloj determinista y los ciclos Sa, y persiste ciclos, rutas y progreso. B-06 carga averías con tipo,
+aplica sus reglas de indisponibilidad y permite activar/desactivar incidencias por ejecución; bloqueos, averías y
+mantenimientos filtran la entrada de cada ciclo, de modo que se replanifica demanda aún no comprometida y se conservan
+las rutas comprometidas. B-07 guarda la bitácora incremental y actualiza el resumen parcial/final e indicadores por plazo,
+incluido el desglose de averías por tipo. Las pruebas unitarias de esta entrega no
+requieren PostgreSQL; las pruebas locales de PostgreSQL se omiten por decisión del usuario, y la verificación del RDS
+le corresponde manualmente. `LectorEjecucion.preparar(id)` reconstruye la entrada desde configuración y archivos
+maestros asociados. B-08 REST está en curso; STOMP se implementará en B-09. Última suite: 88 pruebas ejecutadas,
+0 fallas y 14 omitidas (13 pruebas PostgreSQL y 1 dataset externo opcional); no se probó el RDS.
 
 | Módulo | Clase | Qué cubre |
 |---|---|---|
