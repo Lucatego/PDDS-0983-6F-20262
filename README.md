@@ -16,8 +16,8 @@ es manual y reacciona de forma improvisada ante calles bloqueadas y averías.
 La solución:
 
 - **Registra pedidos** de forma manual, por lote o desde archivos de ventas.
-- **Planifica y replanifica rutas** con dos metaheurísticas en Java (Tabu Search y ALNS), respetando
-  capacidades, plazos, turnos, refrigerio, inventario, bloqueos y averías.
+- **Planifica y replanifica rutas** con Tabu Search en Java (elegido frente a ALNS en la experimentación
+  numérica), respetando capacidades, plazos, turnos, refrigerio, inventario, bloqueos y averías.
 - **Muestra la operación en un mapa en tiempo real** (retícula de 70 × 50 km), accesible desde varios
   dispositivos a la vez.
 - Ejecuta tres escenarios: **Día a día**, **Simulación de 5 días** (en 30–60 minutos reales) y
@@ -29,18 +29,18 @@ La solución:
 ```
 Navegador (N dispositivos)            Servidor de aplicación                 Base de datos
 ┌──────────────────────┐  REST /api   ┌────────────────────────────────┐    ┌──────────────┐
-│ React (frontend/)    │ ───────────▶ │ Spring Boot · Java 25          │ ─▶ │ SGBD         │
-│ mapa, módulos, KPIs  │ ◀─────────── │ reloj y escenarios, servicios, │    │ relacional   │
-└──────────────────────┘  STOMP /ws   │ planificador TS / ALNS         │    └──────────────┘
+│ React (frontend/)    │ ───────────▶ │ Spring Boot · Java 25          │ ─▶ │ PostgreSQL   │
+│ mapa, módulos, KPIs  │ ◀─────────── │ reloj y escenarios, servicios, │    │ (JPA+Flyway) │
+└──────────────────────┘  STOMP /ws   │ planificador Tabu Search       │    └──────────────┘
                                       └────────────────────────────────┘
 ```
 
 | Componente | Tecnología | Estado |
 |---|---|---|
 | Cliente web | React 19, TypeScript, Vite, Tailwind, Zustand, TanStack Query, ECharts, STOMP | Construido (`frontend/`) |
-| Servidor de aplicación | Spring Boot, Java 25, Maven | Pendiente |
-| Planificador | Java, Tabu Search y ALNS sobre un núcleo común | Construido en el repositorio de algoritmos (`DP1-G6F-Prototipo`) |
-| Base de datos | Relacional (SGBD por definir) | Pendiente: en diseño de estructura de datos |
+| Servidor de aplicación | Spring Boot 4.1, Java 25, Maven; Spring MVC, STOMP, Spring Data JPA, Flyway | En construcción: base lista (`backend/`) |
+| Planificador | Java, núcleo común + Tabu Search (ALNS solo en la experimentación) | Construido: módulo `backend/planificador`, copiado del repositorio de algoritmos (`DP1-G6F-Prototipo`) |
+| Base de datos | PostgreSQL (por ahora en AWS; credenciales en `backend/.env`) | Modelo de datos v1.0.1 aprobado; esquema pendiente (migraciones Flyway) |
 
 ## Estructura del repositorio
 
@@ -92,9 +92,10 @@ tiempo real por STOMP en `/ws`. El contrato completo está en [`frontend/README.
 
 - [x] Análisis, arquitectura y experimentación numérica
 - [x] Cliente web con motor de simulación local
-- [ ] Documento de diseño de estructura de datos (en curso)
-- [ ] Base de datos
-- [ ] Servidor Spring Boot e integración con el planificador
+- [x] Documento de diseño de estructura de datos (modelo v1.0.1 aprobado, PostgreSQL)
+- [x] Base del servidor Spring Boot con el planificador Tabu Search y la conexión a PostgreSQL
+- [ ] Base de datos: esquema y carga de archivos
+- [ ] Simulación, incidencias, indicadores y API REST/STOMP
 - [ ] Integración frontend ↔ backend (`VITE_DATA_SOURCE=server`)
 
 ## Licencia

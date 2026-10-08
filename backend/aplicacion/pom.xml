@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Módulo aplicacion: servidor Spring Boot del Centro de Operaciones (REST bajo /api, puerto 8080).
+    Módulo aplicacion: servidor Spring Boot del Centro de Operaciones (REST bajo /api, STOMP en /ws, puerto 8080,
+    PostgreSQL con JPA y Flyway).
     Usa el módulo planificador como biblioteca.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -25,17 +26,46 @@
             <groupId>pe.pucp.paqrap</groupId>
             <artifactId>planificador</artifactId>
         </dependency>
+        <!-- REST bajo /api (contrato de frontend/README.md) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Difusión en tiempo real por STOMP en /ws (SimSnapshot y LogEvent) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <!-- Persistencia en PostgreSQL (D-01, D-02): JPA para el acceso y Flyway para las migraciones -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
