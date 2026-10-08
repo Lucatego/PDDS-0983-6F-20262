@@ -366,7 +366,7 @@ public class PlanificadorControlador {
         var puntos = ruta.stream().map(PlanificadorControlador::point).toList();
         result.put("path", puntos);
         int pasoIdx = 0; Nodo posicion = ruta.isEmpty() ? unidad.ubicacionInicial() : ruta.getFirst();
-        double heading = 0; boolean encontrado = false;
+        double heading = 0; boolean encontrado = false; boolean interpolado = false;
         for (int i=0;i<pasos.size();i++) {
             var paso = pasos.get(i);
             if (motor.reloj().isBefore(paso.salida())) { posicion = paso.origen(); pasoIdx = i; encontrado = true; break; }
@@ -377,16 +377,19 @@ public class PlanificadorControlador {
             result.put("pos", Map.of("x", paso.origen().x() + (paso.destino().x()-paso.origen().x())*avance,
                     "y", paso.origen().y() + (paso.destino().y()-paso.origen().y())*avance));
             heading = Math.atan2(paso.destino().y()-paso.origen().y(), paso.destino().x()-paso.origen().x());
-            pasoIdx = i; encontrado = true; break;
+            pasoIdx = i; encontrado = true; interpolado = true; break;
         }
-        if (!encontrado || !(result.get("pos") instanceof Map<?,?>)) result.put("pos", point(posicion));
+        // En espera entre tramos (servicio, refrigerio) o con la ruta terminada no hay interpolacion: el vehiculo
+        // esta en el nodo calculado. Antes quedaba en la posicion inicial (el almacen de origen) y el mapa
+        // dibujaba una recta falsa hasta el punto de la ruta.
+        if (!interpolado) result.put("pos", point(posicion));
         result.put("pathIdx", Math.min(pasoIdx, Math.max(0, puntos.size()-1))); result.put("heading", heading);
         String state = "toClient"; int stop = 0;
         for (int i=0;i<viaje.plan.paradas().size();i++) {
             var parada = viaje.plan.paradas().get(i);
             if (!motor.reloj().isBefore(parada.llegada()) && motor.reloj().isBefore(parada.finServicio())) {
                 state = "atClient"; stop = i; result.put("timer", Math.max(0, ChronoUnit.MINUTES.between(motor.reloj(), parada.finServicio())));
-                if (i < viaje.plan.caminos().size()) result.put("pos", point(viaje.plan.caminos().get(i).coordenadas().getLast()));
+                if (!parada.partes().isEmpty()) result.put("pos", point(parada.partes().getFirst().pedido().ubicacion()));
                 break;
             }
             if (!motor.reloj().isBefore(parada.finServicio())) stop = i+1;
