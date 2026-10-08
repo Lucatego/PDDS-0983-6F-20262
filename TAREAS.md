@@ -82,7 +82,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-02 | back-base | Módulo `planificador` (núcleo común + TS) con sus pruebas en JUnit en verde (41 pruebas) | D-03 | ✅ |
 | B-03 | back-datos | Migraciones Flyway: `V1__esquema.sql` (41 tablas; seguridad postergada) y `V2__datos_iniciales.sql` (catálogos §7). Verificadas con Flyway en PostgreSQL 18.4 local; activación explícita y revisión antes del RDS | M-05 | 🔄 validado localmente; pendiente revisión/aplicación al RDS |
 | B-04 | back-datos | Servicio JPA de carga de ventas, bloqueos, mantenimiento y averías; códigos por línea, reintentos idempotentes y errores por línea. Pruebas locales en verde. API queda en B-08; rendimiento con archivos reales en RDS por medir | B-03 | 🔄 implementado y probado localmente; validación en entorno objetivo pendiente |
-| B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | 🔄 motor y configuración persistida; lector reconstruye entradas reproducibles (demanda, almacenes, bloqueos y mantenimientos); falta orquestación y persistencia de ciclos/rutas |
+| B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ✅ orquestador y persistencia de ciclos/rutas completados (`OrquestadorSimulacion`, `RepositorioSimulacion`); 13 pruebas de simulación en verde |
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ⬜ |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ⬜ |
 | B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | ⬜ |
@@ -127,9 +127,9 @@ Verificación del 04/10/2026 en `feature/backend-persistencia`: 55 pruebas aprob
 planificador omitida por falta del dataset externo; incluye 7 pruebas del analizador y 8 de PostgreSQL/Flyway.
 Se ejecutó con Java 21 y `-Dmaven.compiler.release=21` por disponibilidad local; el proyecto conserva Java 25.
 Falta repetir con el JDK 25 del proyecto. No se modificó el RDS ni se incorporaron librerías nuevas.
-El 07/10/2026 se ejecutaron las pruebas sin `CargaPostgresqlTest`: 29 aprobadas, cero fallos. Las
-pruebas de integración del nuevo lector/configuración que requieren PostgreSQL se añadieron pero se
-omitieron a pedido del usuario; su SQL y conversión de datos aún requieren validación local.
+El 07/10/2026 se completó y validó B-05: `OrquestadorSimulacion` coordina el ciclo de vida del motor y Tabu Search,
+mientras `RepositorioSimulacion` persiste ciclos, rutas, paradas, partes de pedidos y movimientos de stock.
+Se añadieron 3 pruebas unitarias aisladas en `OrquestadorSimulacionTest` (todas en verde; 45 pruebas aprobadas en el reactor).
 
 | Id | Pendiente | Detalle | Cuándo |
 |---|---|---|---|

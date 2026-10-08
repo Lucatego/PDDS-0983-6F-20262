@@ -25,6 +25,9 @@ class PaqRapAplicacionTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private pe.pucp.paqrap.backend.persistencia.LectorEjecucion lectorEjecucion;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.pucp.paqrap.backend.persistencia.RepositorioSimulacion repositorioSimulacion;
+
     @Autowired
     private ConfiguracionTabu configuracionTabu;
 
