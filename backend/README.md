@@ -16,7 +16,14 @@ Estado: B-01/B-05/B-06/B-07 implementados; B-08 en curso. Incluye carga de archi
 
 ## Base de datos
 
-Por ahora la base está en **AWS** (PostgreSQL en RDS); un contenedor local queda pendiente (P-07 de `TAREAS.md`).
+Hay dos formas de tener la base:
+
+- **Contenedor local (P-07).** `docker compose up -d` desde `backend/` levanta PostgreSQL 18 en `localhost:5433`
+  (base y usuario `paqrap`, clave `paqrap_local`; ver `compose.yaml`). Para la solución completa (BD + backend +
+  frontend) usar el `compose.yaml` de la raíz: ver «Ejecutar todo con Docker» en el `README.md` raíz. La imagen del
+  backend (`Dockerfile`) compila con el JDK 25 y corre con el JRE 25, con Flyway activado contra la BD del contenedor.
+- **AWS (RDS)**, compartida por el equipo; el esquema aún no se ha aplicado allí (lo verifica el usuario).
+
 Las credenciales van en `backend/.env`, que está en `.gitignore` y **no se versiona**:
 
 ```bash

@@ -110,7 +110,10 @@ para los 3 escenarios; también pide la última planificación completa en el re
 
 - Cliente-servidor en capas. Cliente web (React) ↔ servidor Spring Boot (REST + canal en tiempo real)
   ↔ BD relacional **PostgreSQL** (DA-10 cerrada con DD-31/D-01). El DAS pide que todo corra en el laboratorio,
-  sin servicios externos; por ahora la BD de desarrollo está en AWS (contenedor local pendiente, P-07).
+  sin servicios externos. Contenedores (P-07, 08/10/2026): `compose.yaml` en la raíz levanta `postgres` (PostgreSQL
+  18, puerto 5433, de `backend/compose.yaml`), `backend` (JDK 25 → JRE 25, Flyway activado contra la BD local, 8080)
+  y `frontend` (Node 22 → `nginx:1.28-alpine`, puerto 80, proxy de `/api` y `/ws`). La BD compartida del equipo
+  sigue en AWS RDS (esquema aún no aplicado). El DAS (Java 21, sin contenedores) no refleja esto todavía (P-10).
 - Planificador = biblioteca Java detrás de `PlanificadorEstricto` (§6). El reloj, los ciclos (Sa), la
   carga de archivos y la persistencia son responsabilidad del backend, no de los algoritmos.
 - Experimentación (IEN v03, 40 corridas): **TS gana** en tiempo de planificación (Ta medio 13 598 ms
@@ -198,7 +201,9 @@ React 19 + TS 5.9 + Vite 8 + Tailwind 4 + Zustand 5 + TanStack Query 5 + ECharts
   del día 1**; coordenadas en km. Errores `{ "mensaje": "..." }`.
 - REST: `GET /simulacion/estado`, `GET /catalogos`, `POST /simulacion/{configuracion|iniciar|detener|reiniciar}`,
   `POST /pedidos`, `POST /pedidos/lote`, `POST /archivos/{ventas|bloqueos|averias|mantenimiento}` (texto
-  plano), `POST /averias {vehicleId,tipo}`, `POST /mantenimientos {vehicleId,horas}`, `POST /bloqueos {nodos,horas}`.
+  plano), `POST /averias {vehicleId,tipo}`, `POST /mantenimientos {vehicleId,horas}`, `POST /bloqueos {nodos,horas}`,
+  `POST /simulacion/velocidad {factor: 1|2|5|10}` (PR #5: solo 5D y Colapso; base 3 min sim./s, 5D ≈ 40 min).
+  `RunConfig.considerarIncidencias?` (por defecto `false`); `SimSnapshot.speedFactor?` y `simMinPerSec?`.
 - Tipos clave: `Vehicle{id,type,capacity,speed,costPerKm,home,state,pos,path,orderId,…}` con estados
   `idle|break|toClient|atClient|returning|broken|maintenance`; `Order{id(numérico),clientId,pos,qty,
   priority(h),createdAt,deadline,status(pending|assigned),reprogramado,enRiesgo,vehicleId,warehouseId}`;
@@ -240,6 +245,12 @@ Resueltas por las decisiones DD-xx del modelo de datos (aprobadas el 30/09/2026)
 16. **Numeración AG**: la LE v03 difiere de Visión/DAS. Usar la LE v03 salvo indicación contraria.
 17. **CU-05** (Gestión de almacenes) es copia de CU-04 (corrección pendiente, P-04).
 18. **Estructura de repo**: el plan pide `/src/planificador`, `/src/visualizador`, `/data`…; el repo usa `frontend/`.
+19. **Código vs. modelo v1.0.1** (P-09, 08/10/2026): V3 agrega `configuracion_ejecucion.considerar_incidencias`
+   (BOOLEAN, FALSE), que el modelo no tiene; la aceleración base de 5D/Colapso sale de
+   `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 (5D ≈ 40 min) en vez del parámetro `ACELERACION_5D` = 4,0 de
+   DD-26/V2, y el factor ×1/×2/×5/×10 en caliente no se persiste. Registrar en el modelo o alinear el código.
+20. **DAS desactualizado** (P-10): dice Java 21, deja abiertas las tecnologías (R-02) y su vista de despliegue no
+   tiene contenedores.
 
 ## 9. Plan de trabajo actual
 
@@ -255,6 +266,9 @@ Paso 1d ✅ Librerías del backend (D-02, 02/10/2026): Spring MVC (`starter-webm
 Paso 1e ✅ Conexión a PostgreSQL en AWS (RDS, PostgreSQL 18.3, base `paqrap`) verificada por el usuario el
   02/10/2026: el backend arranca contra la BD. Cada IP que se conecte necesita una regla de entrada en el
   security group del RDS (puerto 5432).
+Paso 1f ✅ Contenedores (P-07, 08/10/2026, rama `feature/contenedores`): `docker compose up -d --build` en la raíz
+  levanta BD + backend + frontend; verificado (V1–V3 aplicadas, GUI en `http://localhost` conectada por STOMP).
+  Docker Desktop 29 en el equipo del usuario.
 
 **Estrategia acordada (02/10/2026): corte vertical primero.** Para la semana 08 (`sol.integrada.sem08`) se
 prioriza un flujo completo y demostrable antes que la cobertura total de las LE:
@@ -299,8 +313,10 @@ Estado al 08/10/2026 (detalle en `TAREAS.md` §3 y `backend/README.md`):
   La avería manual no se ha probado contra la BD.
 - Frontend: solo cambió el control de velocidad (PR #5). I-01/I-02 (integración con `VITE_DATA_SOURCE=server`)
   siguen pendientes.
-- Pruebas locales con Java 21 (`-Dmaven.compiler.release=21`); falta repetir con JDK 25.
-Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-07, P-08 y A-02 (`TAREAS.md`).
+- Contenedores listos (Paso 1f, P-07 cerrado): la imagen del backend corre con Java 25.0.4.
+- Pruebas (`./mvnw verify`) con Java 21 (`-Dmaven.compiler.release=21`): 131, 0 fallas, 16 omitidas (08/10/2026);
+  falta repetirlas con JDK 25 (posible dentro de la imagen `eclipse-temurin:25-jdk`).
+Pendientes abiertos con el usuario: D-06 (postergada), P-01, P-04, P-05, P-08, P-09, P-10 y A-02 (`TAREAS.md`).
 
 Calendario: semana 07 (29 sep–01 oct) = Documentación de Diseño completa; semana 08 (06–08 oct) =
 solución integrada `sol.integrada.sem08`.

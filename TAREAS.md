@@ -35,8 +35,9 @@ F0 ──► F3a Backend base ─┼──► F3c Simulación ────┼─
 - F3b, F3c y F3d esperan el modelo de datos **aprobado** (F1).
 - F2 y F3 corren en paralelo sobre el mismo `context/24.dis.estructura.datos.v01.md` (antes
   `docs/estructura-datos/modelo-datos.md`): el `.docx` no se edita a mano por separado.
-- D-01, D-02, D-04 y M-05 están cerradas y la conexión al RDS está verificada (02/10/2026): **B-03 es la siguiente
-  tarea**. Agentes en uso: **redactor** y **auditor**; el agente `backend` se lanza para B-03.
+- D-01, D-02, D-04 y M-05 están cerradas y la conexión al RDS está verificada (02/10/2026). Al 08/10/2026, B-03 a
+  B-07 y B-09 están en `main` (PR #4 y #5), B-08 sigue en curso y los contenedores están listos (P-07): **lo siguiente
+  es I-01/I-02** (integración con el front), el hallazgo de `POST /api/bloqueos` y alinear modelo y código (P-09).
 - **Corte vertical para la semana 08** (acordado el 02/10/2026): B-03 → B-04 → B-05 → B-07 (resumen) → B-08/B-09 →
   I-01/I-02, con el escenario 5D. B-06 (incidencias por tipo, trasvase) y el escenario Colapso completo van después.
 
@@ -85,8 +86,8 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | B-05 | back-sim | Reloj y escenarios (día a día, 5D, colapso), ciclo Sa, rutas comprometidas | B-02, M-05 | ✅ orquestador y persistencia de ciclos/rutas completados (`OrquestadorSimulacion`, `RepositorioSimulacion`); 13 pruebas de simulación en verde |
 | B-06 | back-sim | Incidencias (averías por tipo, mantenimiento, bloqueos) y replanificación | B-05 | ✅ Averías tipadas, regla de indisponibilidad por tipo, indicador por ejecución separado de averías aleatorias, filtrado/replanificación de demanda no comprometida; pruebas unitarias verdes. V3 y carga RDS quedan pendientes de la verificación manual del usuario. |
 | B-07 | back-sim | Bitácora de eventos, indicadores y resumen por ejecución | B-05 | ✅ eventos, consolidado parcial/final e indicadores por plazo persistidos idempotentemente; pruebas unitarias aisladas |
-| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre |
-| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | 🔄 implementado y probado localmente (rama `feature/backend-stomp`): endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
+| B-08 | back-api | Endpoints REST del contrato (`frontend/README.md`) | B-01, M-05 | 🔄 Rutas REST y snapshot dinámico implementados; pruebas HTTP de `GET /catalogos` y snapshot inicial pasan. Pendiente cobertura HTTP de mutaciones/carga/configuración y recuperar conteos/procedencia de archivos desde persistencia al reiniciar. No requiere RDS para el cierre. 08/10 (PR #5): `POST /simulacion/velocidad`, pruebas HTTP de configuración y velocidad, pedido manual corregido, reiniciar sin 500 y cierre de ejecuciones huérfanas al arrancar; **abierto:** `POST /bloqueos` → 500 (ver §4) |
+| B-09 | back-api | Difusión STOMP de `SimSnapshot` y `LogEvent` | B-05, B-08 | ✅ en `main` (PR #5, 08/10/2026); conexión verificada desde la GUI en contenedor (`http://localhost`, «Servidor conectado · STOMP»). Detalle: endpoint `/ws`, `/topic/simulacion/estado` a 5 Hz configurable (1–10) mientras corre y de inmediato tras cada comando REST, cambio de estado o suscripción, `/topic/simulacion/eventos` con la bitácora del motor; incluye `RelojSimulacion` (nadie invocaba `OrquestadorSimulacion.avanzar`). 21 pruebas nuevas (unitarias y STOMP extremo a extremo con 5D real). Pendiente: probar con el front real (I-02) y medir el costo de persistir en cada pulso del reloj sobre el RDS |
 
 ### F4 — Integración
 
@@ -142,6 +143,11 @@ pruebas de PostgreSQL local ni RDS.
 Suite del backend en Java 21 (`-Dmaven.compiler.release=21`): 88 ejecutadas, 0 fallas y 14 omitidas (13 de PostgreSQL
 y 1 por dataset externo opcional); `git diff --check` sin errores.
 
+**08/10/2026, estado de `main`:** PR #4 (`feature/backend-persistencia`, B-03..B-08) y PR #5
+(`feature/backend-velocidad`, B-09 y lo descrito abajo) fusionados. Suite con Java 21: 131 pruebas, 0 fallas, 16
+omitidas. Rama `feature/contenedores`: `compose.yaml` raíz con BD + backend (Java 25) + frontend (nginx); verificado
+con Flyway V1–V3 sobre la BD del contenedor y la GUI conectada por STOMP (P-07 cerrado).
+
 **Rama `feature/backend-velocidad` (08/10/2026), sobre B-08/B-09:**
 - `POST /api/pedidos` fallaba porque `RepositorioSimulacion.registrarPedidoManual` insertaba `pedido.fecha_real_registro`
   (no existe; la columna es `creado_en`, NOT NULL sin valor por defecto, por lo que el INSERT ahora la llena con
@@ -175,6 +181,8 @@ y 1 por dataset externo opcional); `git diff --check` sin errores.
 | P-06 | ✅ Cerrado (02/10/2026, commit 57f8564; auditoría: CONCUERDA CON OBSERVACIONES) · Encabezado del modelo de datos desactualizado | `context/24.dis.estructura.datos.v01.md` (línea 7) aún dice que las decisiones DD-xx están «pendientes de aprobación del usuario», pero M-05 las aprobó el 30/09/2026. Corregir el texto y regenerar el `.docx`. | Próximo cambio del modelo |
 | P-07 | ✅ Cerrado (08/10/2026) · Contenedores locales | `backend/compose.yaml` (Gandy): PostgreSQL 18 en el puerto 5433. `compose.yaml` de la raíz (rama `feature/contenedores`): BD + backend (`eclipse-temurin:25`, Flyway activado contra la BD local) + frontend (`nginx:1.28-alpine`, proxy de `/api` y `/ws`). Verificado: V1–V3 aplicadas, GUI en `http://localhost` conectada por STOMP. Uso en `README.md` («Ejecutar todo con Docker»). El RDS sigue sin modificarse. | Resuelto |
 | P-08 | Pruebas contra la base de datos | Las pruebas excluyen hoy DataSource, JPA y Flyway (`backend/aplicacion/src/test/resources/config/application.yml`). Definir cómo probar contra PostgreSQL (`@DataJpaTest`, Testcontainers u otra; consultar librerías) y quitar las exclusiones. | Cuando avise el usuario |
+| P-09 | Código vs. modelo de datos v1.0.1 (08/10/2026) | (a) `V3__considerar_incidencias.sql` agrega `configuracion_ejecucion.considerar_incidencias` BOOLEAN NOT NULL DEFAULT FALSE (criterio de B-06), ausente en `context/24.dis.estructura.datos.v01.md`. (b) DD-26 y V2 fijan `ACELERACION_5D` = 4,0 (5D ≈ 30 min), pero el backend usa `paqrap.tiempo-real.minutos-por-segundo-base` = 3,0 (≈ 40 min) y el factor ×1/×2/×5/×10 en caliente, no persistido; `aceleracion_reloj` guarda la base. Decidir: registrar en el modelo (nueva versión, DD-32 y DD-26 revisada, redactor + auditor) o alinear el código. | Antes de la siguiente versión del modelo |
+| P-10 | DAS desactualizado (08/10/2026) | `context/23.dis.arquitectura.solucion.v01.md` (v1.0): dice Java 21 (vigente Java 25, DD-31), R-02 deja sin definir servidor, canal y SGBD (ya decididos: Spring Boot 4, STOMP, PostgreSQL) y la vista de despliegue (§4.6, Figura 5, Tabla 10) no incluye los contenedores (`compose.yaml`: nginx, backend JRE 25, PostgreSQL 18). Actualizar con redactor + auditor y regenerar el `.docx`. | Próxima versión del DAS |
 | A-01 | ✅ Cerrado (02/10/2026) · Auditoría P-06 · OBSERVACIÓN | `24.dis.estructura.datos.v01`: el historial tenía dos filas con versión 1.0 (30/09 y 02/10). Decisión del usuario: la corrección editorial sube el documento a **1.0.1** (commit 20a110a; `.docx` regenerado, 73 páginas). Auditoría: CONCUERDA CON OBSERVACIONES. | Resuelto |
 | A-02 | Auditoría P-06 · OBSERVACIÓN | Índice del `.docx`: el número de página va con un tabulador literal en el texto y solo se verificó en LibreOffice (73 páginas). Revisar en Word; ver `FORMATO-DOCUMENTOS.md` §6. | Más adelante (no urgente) |
 
