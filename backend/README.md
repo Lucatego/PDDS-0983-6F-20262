@@ -4,9 +4,9 @@ Backend del Centro de Operaciones de PaqRap (Equipo 6F · 1INF54-0983 · PUCP 20
 con Spring Boot y Java 25. Incluye el planificador **Tabu Search** (algoritmo seleccionado en el IEN v03) como
 biblioteca Java pura.
 
-Estado: base del backend (tareas B-01 y B-02 de `TAREAS.md`) con las librerías decididas (D-02) y la conexión a
-PostgreSQL (D-01). B-03/B-04 incorporan las migraciones y el servicio de carga de archivos; la aplicación al RDS
-requiere revisión previa. WebSocket y los endpoints del contrato del frontend siguen pendientes.
+Estado: B-01/B-04 implementados y B-05 en curso. Incluye migraciones y carga de archivos, motor determinista,
+configuración persistida y preparación de entradas desde PostgreSQL. La orquestación y persistencia de ciclos/rutas,
+WebSocket y endpoints del contrato del frontend siguen pendientes. No se ha aplicado el esquema al RDS.
 
 ## Requisitos
 
@@ -97,11 +97,12 @@ backend/
         ├── configuracion        Propiedades del planificador, beans del TS, prefijo /api
         ├── api                  SaludControlador (GET /api/salud), ManejadorErrores, RespuestaError
         ├── servicio             ServicioPlanificacion.planificar(EstadoOperacion)
-        ├── simulacion           (vacío: reloj, escenarios y ciclos Sa; tareas B-05 a B-07)
-        └── persistencia         ArchivoCarga, RepositorioCarga, AnalizadorArchivo y ServicioCargaArchivos
+        ├── simulacion           ConfiguracionSimulacion, MotorSimulacion y PreparacionSimulacion (B-05 en curso)
+        └── persistencia         Carga de archivos y preparación/configuración persistida de ejecuciones
 ```
 
-El paquete `simulacion` todavía solo tiene `package-info.java`.
+El único algoritmo habilitado por la aplicación es Tabu Search (`TabuSearchPlanner`); las ejecuciones con otro
+algoritmo se rechazan al preparar el motor.
 
 ### Migraciones y carga de archivos (B-03/B-04)
 
