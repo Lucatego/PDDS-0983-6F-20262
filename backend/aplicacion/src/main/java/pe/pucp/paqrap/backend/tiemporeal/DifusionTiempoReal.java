@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -148,7 +149,7 @@ public class DifusionTiempoReal {
             MotorSimulacion motor = orquestador.motor();
             estado = orquestador.estado();
             boolean cambio = solicitada.getAndSet(false) || sinDifusionPrevia || motor != ultimoMotor
-                    || !estado.equals(ultimoEstado);
+                    || !Objects.equals(estado, ultimoEstado);
             if (motor != ultimoMotor) {
                 ultimoMotor = motor;
                 eventosDifundidos = 0;
