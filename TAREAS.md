@@ -98,6 +98,13 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ hecho · ⛔ bloqueado
 | I-04 | Prueba de desconexión/reconexión del Visualizador: interrumpir la conexión de un cliente y recuperarla; comprobar resincronización con el servidor, sin duplicar eventos, pedidos ni entregas y sin afectar al otro cliente. Repetir por escenario. Depende de I-03 | ⬜ |
 | I-05 | Prueba de humo de la solución desplegada: desde la URL web y un segundo dispositivo, verificar carga de GUI, acceso REST, conexión STOMP y visualización de una ejecución de cada escenario. Registrar URL, versión y resultado. Depende de I-02..I-04 y de disponer de un despliegue accesible; no incluye realizar el despliegue ni verificar el RDS | ⬜ |
 
+**Criterio recomendado para B-06 (07/10/2026, por confirmar al implementarlo):** ofrecer la consideración de
+incidencias como configuración por ejecución, controlada por el módulo de simulación al construir el estado
+entregado al planificador. Tabu Search permanece independiente y recibe solo las restricciones/incidencias activas.
+Persistir el valor efectivo y exponerlo por el contrato API para mantener reproducibilidad. En esta iteración,
+mantenerlas fuera del alcance funcional y no mostrar un interruptor sin efecto real. Este criterio no modifica aún
+el modelo de datos aprobado ni cierra una decisión de esquema.
+
 Alcance de estas pruebas del entregable: usar casos reproducibles sin averías ni bloqueos durante el
 periodo simulado; B-06 y D-06 no son requisitos para aprobarlas. Registrar caso, resultado esperado,
 resultado obtenido y evidencia por escenario. Probar los tres escenarios no exige ejecutarlos
